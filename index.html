@@ -93,7 +93,6 @@
             opacity: 0.95;
             font-size: 0.95em;
         }
-
     </style>
 </head>
 <body>
@@ -145,7 +144,6 @@ Charlie"></textarea>
     function formatTimestamp(iso) {
         const d = new Date(iso);
         if (isNaN(d)) return "";
-        // month/day/year h:mm AM/PM, no leading zero for month/day/hour
         const month = d.getMonth() + 1;
         const day = d.getDate();
         const year = d.getFullYear();
@@ -174,6 +172,26 @@ Charlie"></textarea>
 
         messagesDiv.innerHTML = "";
 
+        // Add a timestamp ABOVE the first message (if any)
+        let topTimestampAdded = false;
+        if (messages.length > 0) {
+            const topTime = formatTimestamp(messages[0].time || new Date().toISOString());
+            const tsRowTop = document.createElement('div');
+            tsRowTop.className = 'timestamp-row';
+            const leftLineTop = document.createElement('div');
+            leftLineTop.className = 'line';
+            tsRowTop.appendChild(leftLineTop);
+            const tsTextTop = document.createElement('div');
+            tsTextTop.className = 'timestamp-text';
+            tsTextTop.textContent = topTime;
+            tsRowTop.appendChild(tsTextTop);
+            const rightLineTop = document.createElement('div');
+            rightLineTop.className = 'line';
+            tsRowTop.appendChild(rightLineTop);
+            messagesDiv.appendChild(tsRowTop);
+            topTimestampAdded = true;
+        }
+
         messages.forEach((msg, index) => {
             const div = document.createElement('div');
             div.className = 'message';
@@ -190,26 +208,32 @@ Charlie"></textarea>
             messagesDiv.appendChild(div);
 
             // if next message is by a different author, add timestamp row for THIS message's time
+            // but avoid duplicating the top timestamp if it already represented the boundary after the first message
             if (index < messages.length - 1 && messages[index].name !== messages[index + 1].name) {
-                const timestamp = formatTimestamp(messages[index].time || new Date().toISOString());
+                // if this is the first index and we already added the top timestamp, skip adding duplicate
+                if (index === 0 && topTimestampAdded) {
+                    // skip adding; top timestamp already shows this message's time
+                } else {
+                    const timestamp = formatTimestamp(messages[index].time || new Date().toISOString());
 
-                const tsRow = document.createElement('div');
-                tsRow.className = 'timestamp-row';
+                    const tsRow = document.createElement('div');
+                    tsRow.className = 'timestamp-row';
 
-                const leftLine = document.createElement('div');
-                leftLine.className = 'line';
-                tsRow.appendChild(leftLine);
+                    const leftLine = document.createElement('div');
+                    leftLine.className = 'line';
+                    tsRow.appendChild(leftLine);
 
-                const tsText = document.createElement('div');
-                tsText.className = 'timestamp-text';
-                tsText.textContent = timestamp;
-                tsRow.appendChild(tsText);
+                    const tsText = document.createElement('div');
+                    tsText.className = 'timestamp-text';
+                    tsText.textContent = timestamp;
+                    tsRow.appendChild(tsText);
 
-                const rightLine = document.createElement('div');
-                rightLine.className = 'line';
-                tsRow.appendChild(rightLine);
+                    const rightLine = document.createElement('div');
+                    rightLine.className = 'line';
+                    tsRow.appendChild(rightLine);
 
-                messagesDiv.appendChild(tsRow);
+                    messagesDiv.appendChild(tsRow);
+                }
             }
         });
 
