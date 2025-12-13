@@ -32,6 +32,14 @@
             padding: 8px 0;
         }
 
+        /* When two .message elements are adjacent (same author, no divider between),
+           make them a little closer together. This only applies to consecutive messages
+           from the same author because we insert a .divider element between different authors. */
+        .message + .message {
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+
         /* Divider inserted between different authors */
         .divider {
             border-bottom: 1px solid #ccc;
