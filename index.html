@@ -45,19 +45,14 @@
 
         /* Message bubble */
         .message {
-            background: rgba(0, 180, 0, 0.7); /* green bubble */
-            border-radius: 999px;            /* makes it oval */
-            padding: 10px 16px;              /* extra horizontal padding */
+            background: rgba(0, 180, 0, 0.7);
+            border-radius: 999px;
+            padding: 10px 16px;
             margin: 6px 0;
             color: #ffffff;
-            display: inline-block;           /* keeps bubble sized to text */
+            display: block;          /* one bubble per line */
+            width: fit-content;     /* size to text */
             max-width: 100%;
-        }
-
-
-        /* Same-author messages closer together */
-        .message + .message {
-            margin-top: 3px;
         }
 
         /* Divider between different authors */
@@ -135,7 +130,6 @@
     function addMessage() {
         const name = nameInput.value.trim();
         const text = messageInput.value.trim();
-
         if (!name || !text) return;
 
         const messages = JSON.parse(localStorage.getItem('messages')) || [];
@@ -166,4 +160,3 @@
 
 </body>
 </html>
-
