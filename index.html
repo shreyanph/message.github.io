@@ -98,7 +98,7 @@
         #howBtn {
             position: absolute;
             top: -12px; /* nudged up so it sits slightly above the Name List heading */
-            left: -12px; /* sit to the left edge */
+            left: -80px; /* moved further left to avoid overlapping Name List */
             z-index: 30;
             background: rgba(0,0,0,0.7);
             border: 1px solid rgba(255,255,255,0.15);
@@ -144,6 +144,7 @@
         /* Responsive fallback */
         @media (max-width: 640px) {
             body { margin: 20px; max-width: 100%; }
+            /* revert button position on small screens so it doesn't go offscreen */
             #howBtn { left: 8px; top: 8px; }
         }
     </style>
