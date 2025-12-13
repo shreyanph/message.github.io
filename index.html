@@ -43,19 +43,16 @@
             cursor: pointer;
         }
 
-        /* Message bubble */
         .message {
-            background: rgba(0, 180, 0, 0.7);
             border-radius: 999px;
             padding: 10px 16px;
             margin: 6px 0;
             color: #ffffff;
-            display: block;          /* one bubble per line */
-            width: fit-content;     /* size to text */
+            display: block;
+            width: fit-content;
             max-width: 100%;
         }
 
-        /* Divider between different authors */
         .divider {
             border-bottom: 1px solid rgba(255,255,255,0.25);
             margin: 8px 0;
@@ -71,16 +68,40 @@
             margin-top: 10px;
         }
 
-        #messages, input, textarea {
+        #messages, input, textarea, select {
             backdrop-filter: blur(2px);
         }
+
+        /* Timestamp row: two thin lines with time centered */
+        .timestamp-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+            color: #ffffff;
+            font-size: 0.9em;
+        }
+        .timestamp-row .line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.18);
+        }
+        .timestamp-row .timestamp-text {
+            white-space: nowrap;
+            padding: 0 6px;
+            color: #ffffff;
+            opacity: 0.95;
+            font-size: 0.95em;
+        }
+
     </style>
 </head>
 <body>
 
-<!-- ADDED: Name List section (user types all names here) -->
 <h2>Name List</h2>
-<p style="color:#fff;margin-top:0;margin-bottom:6px;">Type each name on its own line (these will populate the dropdown used in the message board):</p>
+<p style="margin-top:0;margin-bottom:6px;">
+    Type each name on its own line:
+</p>
 <textarea id="nameListInput" placeholder="Alice
 Bob
 Charlie"></textarea>
@@ -89,9 +110,8 @@ Charlie"></textarea>
 
 <h2 style="margin-top:20px;">Message Board</h2>
 
-<!-- replaced single-line name text input with a dropdown populated from the Name List -->
 <select id="nameSelect" required>
-    <option value="" disabled selected>— select a name —</option>
+    <option value="" disabled selected>Select a name</option>
 </select>
 <br><br>
 
@@ -111,34 +131,54 @@ Charlie"></textarea>
     const sendBtn = document.getElementById('sendBtn');
     const clearBtn = document.getElementById('clearBtn');
 
-    // Name list elements
     const nameListInput = document.getElementById('nameListInput');
     const saveNamesBtn = document.getElementById('saveNamesBtn');
 
-    // Supported colors (Green is first to match original)
     const colors = [
-        'rgba(0, 180, 0, 0.7)',       // Green
-        'rgba(255, 165, 0, 0.85)',    // Orange
-        'rgba(220, 20, 60, 0.85)',    // Red
-        'rgba(128, 0, 128, 0.85)',    // Purple
-        'rgba(255, 0, 255, 0.85)'     // Magenta/Pink
+        'rgba(0, 180, 0, 0.7)',     // Green
+        'rgba(255, 165, 0, 0.85)',  // Orange
+        'rgba(220, 20, 60, 0.85)',  // Red
+        'rgba(128, 0, 128, 0.85)',  // Purple
+        'rgba(255, 0, 255, 0.85)'   // Magenta
     ];
+
+    function formatTimestamp(iso) {
+        const d = new Date(iso);
+        if (isNaN(d)) return "";
+        // month/day/year h:mm AM/PM, no leading zero for month/day/hour
+        const month = d.getMonth() + 1;
+        const day = d.getDate();
+        const year = d.getFullYear();
+
+        let hour = d.getHours();
+        const minute = d.getMinutes().toString().padStart(2, '0');
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12;
+        if (hour === 0) hour = 12;
+
+        return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
+    }
 
     function loadMessages() {
         const messages = JSON.parse(localStorage.getItem('messages')) || [];
+        let changed = false;
+
+        // ensure each message has a timestamp (so dividers can show them)
+        for (let i = 0; i < messages.length; i++) {
+            if (!messages[i].time) {
+                messages[i].time = new Date().toISOString();
+                changed = true;
+            }
+        }
+        if (changed) localStorage.setItem('messages', JSON.stringify(messages));
+
         messagesDiv.innerHTML = "";
 
         messages.forEach((msg, index) => {
             const div = document.createElement('div');
             div.className = 'message';
 
-            // determine color for this author (assign if missing)
-            const nameColorMap = JSON.parse(localStorage.getItem('nameColorMap')) || {};
-            let color = nameColorMap[msg.name];
-            if (!color) {
-                color = assignColorToName(msg.name);
-            }
-            // apply color as inline style so each author gets consistent color
+            const color = assignColorToName(msg.name);
             div.style.background = color;
 
             const nameSpan = document.createElement('span');
@@ -149,10 +189,27 @@ Charlie"></textarea>
             div.appendChild(document.createTextNode(msg.text));
             messagesDiv.appendChild(div);
 
+            // if next message is by a different author, add timestamp row for THIS message's time
             if (index < messages.length - 1 && messages[index].name !== messages[index + 1].name) {
-                const divider = document.createElement('div');
-                divider.className = 'divider';
-                messagesDiv.appendChild(divider);
+                const timestamp = formatTimestamp(messages[index].time || new Date().toISOString());
+
+                const tsRow = document.createElement('div');
+                tsRow.className = 'timestamp-row';
+
+                const leftLine = document.createElement('div');
+                leftLine.className = 'line';
+                tsRow.appendChild(leftLine);
+
+                const tsText = document.createElement('div');
+                tsText.className = 'timestamp-text';
+                tsText.textContent = timestamp;
+                tsRow.appendChild(tsText);
+
+                const rightLine = document.createElement('div');
+                rightLine.className = 'line';
+                tsRow.appendChild(rightLine);
+
+                messagesDiv.appendChild(tsRow);
             }
         });
 
@@ -167,7 +224,7 @@ Charlie"></textarea>
         if (!name || !text) return;
 
         const messages = JSON.parse(localStorage.getItem('messages')) || [];
-        messages.push({ name, text });
+        messages.push({ name, text, time: new Date().toISOString() });
         localStorage.setItem('messages', JSON.stringify(messages));
 
         messageInput.value = "";
@@ -179,111 +236,70 @@ Charlie"></textarea>
         loadMessages();
     }
 
-    // --- Name list handling ---
     function parseNames(raw) {
-        // split on newlines or commas, trim, remove empties, dedupe preserving order
-        const parts = raw.split(/\r?\n|,/).map(s => s.trim()).filter(s => s.length > 0);
-        const seen = new Set();
-        const out = [];
-        for (const p of parts) {
-            if (!seen.has(p)) {
-                seen.add(p);
-                out.push(p);
-            }
-        }
-        return out;
+        return [...new Set(
+            raw.split(/\r?\n|,/).map(n => n.trim()).filter(Boolean)
+        )];
     }
 
     function saveNames() {
-        const raw = nameListInput.value || "";
-        const names = parseNames(raw);
+        const names = parseNames(nameListInput.value);
         localStorage.setItem('names', JSON.stringify(names));
-        // ensure colors exist for these names
-        names.forEach(n => assignColorToName(n));
+        names.forEach(assignColorToName);
         loadNames();
     }
 
     function loadNames() {
         const names = JSON.parse(localStorage.getItem('names')) || [];
-        // populate textarea if empty (first time)
+        nameSelect.innerHTML = "";
+
+        const placeholder = document.createElement('option');
+        placeholder.value = "";
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        placeholder.textContent = "Select a name";
+        nameSelect.appendChild(placeholder);
+
+        names.forEach(name => {
+            assignColorToName(name);
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            nameSelect.appendChild(opt);
+        });
+
         if (!nameListInput.value && names.length) {
             nameListInput.value = names.join("\n");
         }
-
-        // populate select
-        nameSelect.innerHTML = "";
-        if (names.length === 0) {
-            const opt = document.createElement('option');
-            opt.value = "";
-            opt.disabled = true;
-            opt.selected = true;
-            opt.textContent = "— no names saved —";
-            nameSelect.appendChild(opt);
-        } else {
-            const placeholder = document.createElement('option');
-            placeholder.value = "";
-            placeholder.disabled = true;
-            placeholder.selected = true;
-            placeholder.textContent = "— select a name —";
-            nameSelect.appendChild(placeholder);
-
-            names.forEach(n => {
-                // ensure each name has an assigned color
-                assignColorToName(n);
-
-                const opt = document.createElement('option');
-                opt.value = n;
-                opt.textContent = n;
-                nameSelect.appendChild(opt);
-            });
-        }
     }
 
-    // Color assignment utilities
     function assignColorToName(name) {
-        const nameColorMap = JSON.parse(localStorage.getItem('nameColorMap')) || {};
+        const map = JSON.parse(localStorage.getItem('nameColorMap')) || {};
+        if (map[name]) return map[name];
 
-        if (nameColorMap[name]) {
-            return nameColorMap[name];
-        }
-
-        // count usage of each color
         const counts = colors.map(() => 0);
-        Object.values(nameColorMap).forEach(c => {
-            const idx = colors.indexOf(c);
-            if (idx !== -1) counts[idx]++;
+        Object.values(map).forEach(c => {
+            const i = colors.indexOf(c);
+            if (i !== -1) counts[i]++;
         });
 
-        // pick the color with the smallest count (minimize repeats)
-        let minIdx = 0;
-        for (let i = 1; i < counts.length; i++) {
-            if (counts[i] < counts[minIdx]) minIdx = i;
-        }
-
-        // assign selected color
-        nameColorMap[name] = colors[minIdx];
-        localStorage.setItem('nameColorMap', JSON.stringify(nameColorMap));
-        return nameColorMap[name];
+        const idx = counts.indexOf(Math.min(...counts));
+        map[name] = colors[idx];
+        localStorage.setItem('nameColorMap', JSON.stringify(map));
+        return map[name];
     }
 
-    // wire up events
-    messageInput.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
+    messageInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             addMessage();
         }
     });
 
     sendBtn.addEventListener('click', addMessage);
     clearBtn.addEventListener('click', clearMessages);
+    saveNamesBtn.addEventListener('click', saveNames);
 
-    saveNamesBtn.addEventListener('click', function () {
-        saveNames();
-        // after saving, automatically focus the message textarea for convenience
-        messageInput.focus();
-    });
-
-    // initialize
     loadNames();
     loadMessages();
 </script>
