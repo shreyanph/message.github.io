@@ -4,15 +4,22 @@
     <meta charset="UTF-8" />
     <title>Local Message Board (Cloud)</title>
     <style>
+        /* PAGE CONTAINER (kept to original width) */
         body {
             font-family: Arial, sans-serif;
-            max-width: 900px;
+            max-width: 600px;               /* restored original width */
             margin: 40px auto;
             color: #ffffff;
             background-image: url("https://scx1.b-cdn.net/csz/news/800a/2023/data-science.jpg");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            position: relative;
+        }
+
+        /* small helper container so absolute button positions relative to page area */
+        .page-inner {
+            position: relative;
         }
 
         h2 {
@@ -29,10 +36,7 @@
             padding: 8px;
         }
 
-        textarea {
-            height: 80px;
-            resize: vertical;
-        }
+        textarea { height: 80px; resize: vertical; }
 
         button {
             margin-top: 10px;
@@ -64,13 +68,9 @@
             color: #ffffff;
         }
 
-        #messages {
-            margin-top: 10px;
-        }
+        #messages { margin-top: 10px; }
 
-        #messages, input, textarea, select {
-            backdrop-filter: blur(2px);
-        }
+        #messages, input, textarea, select { backdrop-filter: blur(2px); }
 
         /* Timestamp row: two thin lines with time centered */
         .timestamp-row {
@@ -94,54 +94,66 @@
             font-size: 0.95em;
         }
 
-        /* Two-column layout for How To Use + Name List */
-        .top-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            align-items: start;
-            margin-bottom: 12px;
+        /* How To Use button (top-left inside the page container) */
+        #howBtn {
+            position: absolute;
+            top: -12px; /* nudged up so it sits slightly above the Name List heading */
+            left: -12px; /* sit to the left edge */
+            z-index: 30;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 6px 10px;
+            border-radius: 6px;
         }
 
-        .howto {
-            background: rgba(0,0,0,0.45);
-            padding: 12px;
+        /* Modal / panel for How To Use */
+        .how-modal-backdrop {
+            display: none; /* shown when active */
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .how-modal {
+            max-width: 560px;
+            width: 100%;
+            background: rgba(0,0,0,0.8);
             border: 1px solid rgba(255,255,255,0.12);
+            padding: 16px;
             border-radius: 8px;
+            color: #fff;
+            box-shadow: 0 6px 30px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        .how-modal h3 { margin-top:0; }
+        .how-modal .close {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
         }
 
-        .howto p, .howto ol {
-            color: #ffffff;
-            margin: 6px 0;
-        }
-
-        /* Responsive: stack on narrow screens */
-        @media (max-width: 740px) {
-            .top-row {
-                grid-template-columns: 1fr;
-            }
-            body {
-                margin: 20px;
-            }
+        /* Responsive fallback */
+        @media (max-width: 640px) {
+            body { margin: 20px; max-width: 100%; }
+            #howBtn { left: 8px; top: 8px; }
         }
     </style>
 </head>
 <body>
+  <div class="page-inner">
+    <!-- How To Use button at top-left -->
+    <button id="howBtn" title="How To Use">How To Use</button>
 
-<div class="top-row">
-  <!-- NEW: How To Use section (left) -->
-  <div class="howto">
-    <h2 style="margin-top:0;margin-bottom:6px;">How To Use</h2>
-    <ol>
-      <li><u>1 person</u> should enter the names of all users who shall use this messaging platform and save it to the cloud using the "Save Names" button.</li>
-      <li>Each user should than use the dropdown menu in the "Message Board" section and select <u>their</u> name.</li>
-      <li>Each user can now use the text box bellow to send messages to one another, with auto generated separators &amp; timestamps.</li>
-    </ol>
-    <p>Thank you for using <em>Message Board</em>!</p>
-  </div>
-
-  <!-- Existing Name List (right) -->
-  <div>
+    <!-- Name List (original centred position) -->
     <h2>Name List</h2>
     <p style="margin-top:0;margin-bottom:6px;">
         Type each name on its own line:
@@ -151,294 +163,322 @@ Bob
 Charlie"></textarea>
     <br>
     <button id="saveNamesBtn">Save Names</button>
+
+    <h2 style="margin-top:20px;">Message Board</h2>
+
+    <select id="nameSelect" required>
+        <option value="" disabled selected>Select a name</option>
+    </select>
+    <br><br>
+
+    <textarea id="messageInput" placeholder="Type a message..."></textarea>
+    <br>
+    <button id="sendBtn">Send</button>
+
+    <h2>Message History</h2>
+    <button id="clearBtn">Clear Message History (cloud)</button>
+
+    <div id="messages"></div>
   </div>
-</div>
 
-<h2 style="margin-top:0;">Message Board</h2>
+  <!-- How To Use modal (hidden by default) -->
+  <div id="howBackdrop" class="how-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="how-modal" role="document">
+      <button class="close" id="howClose" aria-label="Close">&times;</button>
+      <h3>How To Use</h3>
+      <ol>
+        <li><u>1 person</u> should enter the names of all users who shall use this messaging platform and save it to the cloud using the "Save Names" button.</li>
+        <li>Each user should then use the dropdown menu in the "Message Board" section and select <u>their</u> name.</li>
+        <li>Each user can now use the text box below to send messages to one another, with auto generated separators &amp; timestamps.</li>
+      </ol>
+      <p>Thank you for using <em>Message Board</em>!</p>
+    </div>
+  </div>
 
-<select id="nameSelect" required>
-    <option value="" disabled selected>Select a name</option>
-</select>
-<br><br>
+  <!-- Firebase v12 modular SDK (script type=module) -->
+  <script type="module">
+    // Firebase imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      serverTimestamp,
+      query,
+      orderBy,
+      onSnapshot,
+      setDoc,
+      doc,
+      deleteDoc,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-<textarea id="messageInput" placeholder="Type a message..."></textarea>
-<br>
-<button id="sendBtn">Send</button>
+    // ---------- Paste your firebaseConfig object here (from Firebase console) ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyDP7gvu9KT8u37wNEFJ1BUPBBxGKiIUEo8",
+      authDomain: "message-history-2d3ab.firebaseapp.com",
+      projectId: "message-history-2d3ab",
+      storageBucket: "message-history-2d3ab.firebasestorage.app",
+      messagingSenderId: "258209489466",
+      appId: "1:258209489466:web:fae16998d2b8c161e6cb03",
+      measurementId: "G-X3LTVS01X8"
+    };
+    // -------------------------------------------------------------------------------
 
-<h2>Message History</h2>
-<button id="clearBtn">Clear Message History (cloud)</button>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-<div id="messages"></div>
+    // DOM refs
+    const nameListInput = document.getElementById('nameListInput');
+    const saveNamesBtn = document.getElementById('saveNamesBtn');
+    const nameSelect = document.getElementById('nameSelect');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const messagesDiv = document.getElementById('messages');
 
-<!-- Firebase v12 modular SDK (script type=module) -->
-<script type="module">
-  // Firebase imports
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    serverTimestamp,
-    query,
-    orderBy,
-    onSnapshot,
-    setDoc,
-    doc,
-    deleteDoc,
-    getDocs
-  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    // How-To modal refs
+    const howBtn = document.getElementById('howBtn');
+    const howBackdrop = document.getElementById('howBackdrop');
+    const howClose = document.getElementById('howClose');
 
-  // ---------- Paste your firebaseConfig object here (from Firebase console) ----------
-  const firebaseConfig = {
-    apiKey: "AIzaSyDP7gvu9KT8u37wNEFJ1BUPBBxGKiIUEo8",
-    authDomain: "message-history-2d3ab.firebaseapp.com",
-    projectId: "message-history-2d3ab",
-    storageBucket: "message-history-2d3ab.firebasestorage.app",
-    messagingSenderId: "258209489466",
-    appId: "1:258209489466:web:fae16998d2b8c161e6cb03",
-    measurementId: "G-X3LTVS01X8"
-  };
-  // -------------------------------------------------------------------------------
+    howBtn.addEventListener('click', () => {
+      howBackdrop.style.display = 'flex';
+    });
+    howClose.addEventListener('click', () => {
+      howBackdrop.style.display = 'none';
+    });
+    howBackdrop.addEventListener('click', (e) => {
+      if (e.target === howBackdrop) howBackdrop.style.display = 'none';
+    });
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    // color palette
+    const colors = [
+      'rgba(0, 180, 0, 0.7)',     // Green
+      'rgba(255, 165, 0, 0.85)',  // Orange
+      'rgba(220, 20, 60, 0.85)',  // Red
+      'rgba(128, 0, 128, 0.85)',  // Purple
+      'rgba(255, 0, 255, 0.85)'   // Magenta
+    ];
 
-  // DOM refs
-  const nameListInput = document.getElementById('nameListInput');
-  const saveNamesBtn = document.getElementById('saveNamesBtn');
-  const nameSelect = document.getElementById('nameSelect');
-  const messageInput = document.getElementById('messageInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const clearBtn = document.getElementById('clearBtn');
-  const messagesDiv = document.getElementById('messages');
-
-  // color palette
-  const colors = [
-    'rgba(0, 180, 0, 0.7)',     // Green
-    'rgba(255, 165, 0, 0.85)',  // Orange
-    'rgba(220, 20, 60, 0.85)',  // Red
-    'rgba(128, 0, 128, 0.85)',  // Purple
-    'rgba(255, 0, 255, 0.85)'   // Magenta
-  ];
-
-  // ---------- Utilities ----------
-  function parseNames(raw) {
-    return [...new Set(raw.split(/\r?\n|,/).map(s => s.trim()).filter(Boolean))];
-  }
-
-  // deterministic name -> color via hash so every device sees same mapping
-  function hashStringToIndex(s, mod) {
-    let h = 5381;
-    for (let i = 0; i < s.length; i++) {
-      h = ((h << 5) + h) + s.charCodeAt(i);
-      h = h & 0xffffffff;
+    // ---------- Utilities ----------
+    function parseNames(raw) {
+      return [...new Set(raw.split(/\r?\n|,/).map(s => s.trim()).filter(Boolean))];
     }
-    return Math.abs(h) % mod;
-  }
-  function colorForName(name) {
-    const idx = hashStringToIndex(name.toLowerCase(), colors.length);
-    return colors[idx];
-  }
 
-  function formatTimestamp(thing) {
-    if (!thing) return "";
-    // thing might be Firestore Timestamp, ISO string, or Date
-    let d;
-    if (typeof thing === 'string') d = new Date(thing);
-    else if (thing && typeof thing.toDate === 'function') d = thing.toDate();
-    else if (thing instanceof Date) d = thing;
-    else d = new Date();
-    if (isNaN(d)) return "";
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
-    const year = d.getFullYear();
-    let hour = d.getHours();
-    const minute = d.getMinutes().toString().padStart(2, '0');
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    hour = hour % 12;
-    if (hour === 0) hour = 12;
-    return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
-  }
-
-  // -------------------- Names (meta/names doc) --------------------
-  const namesDocRef = doc(db, 'meta', 'names');
-
-  // realtime listener for names (falls back to localStorage if not present)
-  onSnapshot(namesDocRef, snap => {
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data && Array.isArray(data.list)) {
-        populateNames(data.list);
-        if (!nameListInput.value) nameListInput.value = data.list.join("\n");
+    // deterministic name -> color via hash so every device sees same mapping
+    function hashStringToIndex(s, mod) {
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) {
+        h = ((h << 5) + h) + s.charCodeAt(i);
+        h = h & 0xffffffff;
       }
-    } else {
+      return Math.abs(h) % mod;
+    }
+    function colorForName(name) {
+      const idx = hashStringToIndex(name.toLowerCase(), colors.length);
+      return colors[idx];
+    }
+
+    function formatTimestamp(thing) {
+      if (!thing) return "";
+      // thing might be Firestore Timestamp, ISO string, or Date
+      let d;
+      if (typeof thing === 'string') d = new Date(thing);
+      else if (thing && typeof thing.toDate === 'function') d = thing.toDate();
+      else if (thing instanceof Date) d = thing;
+      else d = new Date();
+      if (isNaN(d)) return "";
+      const month = d.getMonth() + 1;
+      const day = d.getDate();
+      const year = d.getFullYear();
+      let hour = d.getHours();
+      const minute = d.getMinutes().toString().padStart(2, '0');
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12;
+      if (hour === 0) hour = 12;
+      return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
+    }
+
+    // -------------------- Names (meta/names doc) --------------------
+    const namesDocRef = doc(db, 'meta', 'names');
+
+    // realtime listener for names (falls back to localStorage if not present)
+    onSnapshot(namesDocRef, snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data && Array.isArray(data.list)) {
+          populateNames(data.list);
+          if (!nameListInput.value) nameListInput.value = data.list.join("\n");
+        }
+      } else {
+        const local = JSON.parse(localStorage.getItem('names') || 'null');
+        if (Array.isArray(local)) populateNames(local);
+      }
+    }, err => {
       const local = JSON.parse(localStorage.getItem('names') || 'null');
       if (Array.isArray(local)) populateNames(local);
-    }
-  }, err => {
-    const local = JSON.parse(localStorage.getItem('names') || 'null');
-    if (Array.isArray(local)) populateNames(local);
-  });
+    });
 
-  saveNamesBtn.addEventListener('click', async () => {
-    const names = parseNames(nameListInput.value || "");
-    try {
-      await setDoc(namesDocRef, { list: names });
+    saveNamesBtn.addEventListener('click', async () => {
+      const names = parseNames(nameListInput.value || "");
+      try {
+        await setDoc(namesDocRef, { list: names });
+        localStorage.setItem('names', JSON.stringify(names));
+      } catch (err) {
+        alert("Failed to save names to cloud: " + err.message);
+      }
+    });
+
+    function populateNames(names) {
       localStorage.setItem('names', JSON.stringify(names));
-    } catch (err) {
-      alert("Failed to save names to cloud: " + err.message);
-    }
-  });
-
-  function populateNames(names) {
-    localStorage.setItem('names', JSON.stringify(names));
-    nameSelect.innerHTML = "";
-    const placeholder = document.createElement('option');
-    placeholder.value = "";
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    placeholder.textContent = "Select a name";
-    nameSelect.appendChild(placeholder);
-    names.forEach(n => {
-      const opt = document.createElement('option');
-      opt.value = n;
-      opt.textContent = n;
-      nameSelect.appendChild(opt);
-    });
-  }
-
-  // -------------------- Messages (collection: messages) --------------------
-  const messagesCol = collection(db, 'messages');
-  const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
-
-  // realtime listener for messages
-  onSnapshot(messagesQuery, snapshot => {
-    const msgs = [];
-    snapshot.forEach(docSnap => {
-      const d = docSnap.data();
-      msgs.push({
-        id: docSnap.id,
-        name: d.name,
-        text: d.text || "",
-        time: d.time || null
+      nameSelect.innerHTML = "";
+      const placeholder = document.createElement('option');
+      placeholder.value = "";
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      placeholder.textContent = "Select a name";
+      nameSelect.appendChild(placeholder);
+      names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        nameSelect.appendChild(opt);
       });
+    }
+
+    // -------------------- Messages (collection: messages) --------------------
+    const messagesCol = collection(db, 'messages');
+    const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
+
+    // realtime listener for messages
+    onSnapshot(messagesQuery, snapshot => {
+      const msgs = [];
+      snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        msgs.push({
+          id: docSnap.id,
+          name: d.name,
+          text: d.text || "",
+          time: d.time || null
+        });
+      });
+      renderMessages(msgs);
+    }, err => {
+      console.error("Realtime messages error:", err);
     });
-    renderMessages(msgs);
-  }, err => {
-    console.error("Realtime messages error:", err);
-  });
 
-  // Render messages such that each timestamp separates authors and corresponds to the block BELOW it
-  function renderMessages(messages) {
-    messagesDiv.innerHTML = "";
-    if (messages.length === 0) return;
+    // Render messages such that each timestamp separates authors and corresponds to the block BELOW it
+    function renderMessages(messages) {
+      messagesDiv.innerHTML = "";
+      if (messages.length === 0) return;
 
-    // Top timestamp corresponds to the first message's time (labels the block below)
-    const topTime = formatTimestamp(messages[0].time);
-    messagesDiv.appendChild(createTimestampRow(topTime));
+      // Top timestamp corresponds to the first message's time (labels the block below)
+      const topTime = formatTimestamp(messages[0].time);
+      messagesDiv.appendChild(createTimestampRow(topTime));
 
-    messages.forEach((m, i) => {
-      const div = document.createElement('div');
-      div.className = 'message';
-      div.style.background = colorForName(m.name);
+      messages.forEach((m, i) => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.style.background = colorForName(m.name);
 
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'name';
-      nameSpan.textContent = m.name + ': ';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = m.name + ': ';
 
-      div.appendChild(nameSpan);
-      div.appendChild(document.createTextNode(m.text));
-      messagesDiv.appendChild(div);
+        div.appendChild(nameSpan);
+        div.appendChild(document.createTextNode(m.text));
+        messagesDiv.appendChild(div);
 
-      // If next message author differs, insert timestamp that corresponds to the messages below (use next message's time)
-      if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
-        const nextTime = formatTimestamp(messages[i + 1].time);
-        messagesDiv.appendChild(createTimestampRow(nextTime));
+        // If next message author differs, insert timestamp that corresponds to the messages below (use next message's time)
+        if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
+          const nextTime = formatTimestamp(messages[i + 1].time);
+          messagesDiv.appendChild(createTimestampRow(nextTime));
+        }
+      });
+
+      if (messagesDiv.lastElementChild) {
+        messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+
+    function createTimestampRow(text) {
+      const row = document.createElement('div');
+      row.className = 'timestamp-row';
+      const left = document.createElement('div'); left.className = 'line';
+      const mid = document.createElement('div'); mid.className = 'timestamp-text'; mid.textContent = text || '';
+      const right = document.createElement('div'); right.className = 'line';
+      row.appendChild(left); row.appendChild(mid); row.appendChild(right);
+      return row;
+    }
+
+    // -------------------- Retention: auto-clear to keep last 10 if total > 100 --------------------
+    async function enforceRetention() {
+      try {
+        const snap = await getDocs(messagesQuery);
+        const total = snap.size;
+        if (total > 100) {
+          const numToDelete = total - 10;
+          // snap.docs is ordered ascending by time due to messagesQuery
+          const docsToDelete = snap.docs.slice(0, numToDelete);
+          const deletes = docsToDelete.map(d => deleteDoc(doc(db, 'messages', d.id)));
+          await Promise.all(deletes);
+        }
+      } catch (err) {
+        console.error('Retention enforcement failed:', err);
+      }
+    }
+
+    // -------------------- Add message --------------------
+    sendBtn.addEventListener('click', addMessage);
+    messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addMessage();
       }
     });
 
-    if (messagesDiv.lastElementChild) {
-      messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    async function addMessage() {
+      const name = (nameSelect.value || "").trim();
+      const text = (messageInput.value || "").trim();
+      if (!name || !text) return;
+      try {
+        await addDoc(messagesCol, {
+          name,
+          text,
+          time: serverTimestamp()
+        });
+        messageInput.value = "";
+        // enforce retention right after adding a new message
+        await enforceRetention();
+      } catch (err) {
+        alert("Failed to send message: " + err.message);
+      }
     }
-  }
 
-  function createTimestampRow(text) {
-    const row = document.createElement('div');
-    row.className = 'timestamp-row';
-    const left = document.createElement('div'); left.className = 'line';
-    const mid = document.createElement('div'); mid.className = 'timestamp-text'; mid.textContent = text || '';
-    const right = document.createElement('div'); right.className = 'line';
-    row.appendChild(left); row.appendChild(mid); row.appendChild(right);
-    return row;
-  }
-
-  // -------------------- Retention: auto-clear to keep last 10 if total > 100 --------------------
-  async function enforceRetention() {
-    try {
-      const snap = await getDocs(messagesQuery);
-      const total = snap.size;
-      if (total > 100) {
-        const numToDelete = total - 10;
-        // snap.docs is ordered ascending by time due to messagesQuery
-        const docsToDelete = snap.docs.slice(0, numToDelete);
-        const deletes = docsToDelete.map(d => deleteDoc(doc(db, 'messages', d.id)));
+    // -------------------- Clear messages (cloud) --------------------
+    clearBtn.addEventListener('click', async () => {
+      if (!confirm("Delete all messages from cloud? This cannot be undone.")) return;
+      try {
+        const snap = await getDocs(messagesCol);
+        const deletes = [];
+        snap.forEach(d => deletes.push(deleteDoc(doc(db, 'messages', d.id))));
         await Promise.all(deletes);
+      } catch (err) {
+        alert("Failed to clear messages: " + err.message);
       }
-    } catch (err) {
-      console.error('Retention enforcement failed:', err);
-    }
-  }
+    });
 
-  // -------------------- Add message --------------------
-  sendBtn.addEventListener('click', addMessage);
-  messageInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      addMessage();
-    }
-  });
-
-  async function addMessage() {
-    const name = (nameSelect.value || "").trim();
-    const text = (messageInput.value || "").trim();
-    if (!name || !text) return;
-    try {
-      await addDoc(messagesCol, {
-        name,
-        text,
-        time: serverTimestamp()
-      });
-      messageInput.value = "";
-      // enforce retention right after adding a new message
-      await enforceRetention();
-    } catch (err) {
-      alert("Failed to send message: " + err.message);
-    }
-  }
-
-  // -------------------- Clear messages (cloud) --------------------
-  clearBtn.addEventListener('click', async () => {
-    if (!confirm("Delete all messages from cloud? This cannot be undone.")) return;
-    try {
-      const snap = await getDocs(messagesCol);
-      const deletes = [];
-      snap.forEach(d => deletes.push(deleteDoc(doc(db, 'messages', d.id))));
-      await Promise.all(deletes);
-    } catch (err) {
-      alert("Failed to clear messages: " + err.message);
-    }
-  });
-
-  // -------------------- Bootstrap: use local names as fallback --------------------
-  (function init() {
-    const localNames = JSON.parse(localStorage.getItem('names') || 'null');
-    if (Array.isArray(localNames) && (!nameListInput.value)) {
-      nameListInput.value = localNames.join("\n");
-    }
-    if (Array.isArray(localNames)) populateNames(localNames);
-    // Firestore onSnapshot listeners will override/populate when cloud doc exists
-  })();
-</script>
+    // -------------------- Bootstrap: use local names as fallback --------------------
+    (function init() {
+      const localNames = JSON.parse(localStorage.getItem('names') || 'null');
+      if (Array.isArray(localNames) && (!nameListInput.value)) {
+        nameListInput.value = localNames.join("\n");
+      }
+      if (Array.isArray(localNames)) populateNames(localNames);
+      // Firestore onSnapshot listeners will override/populate when cloud doc exists
+    })();
+  </script>
 
 </body>
 </html>
