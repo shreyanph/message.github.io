@@ -4,37 +4,55 @@
     <meta charset="UTF-8" />
     <title>Local Message Board</title>
     <style>
+        /* Background image (user-provided) */
         body {
             font-family: Arial, sans-serif;
             max-width: 600px;
             margin: 40px auto;
+            color: #ffffff; /* main text color = white for dark theme */
+            background-image: url("https://scx1.b-cdn.net/csz/news/800a/2023/data-science.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         h2 {
             margin-bottom: 10px;
+            color: #ffffff;
         }
 
+        /* Inputs and textareas: white text on a darker translucent background */
         input, textarea {
             width: 100%;
             box-sizing: border-box;
+            color: #ffffff;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 8px;
         }
 
         textarea {
             height: 80px;
+            resize: vertical;
         }
 
+        /* Buttons: dark translucent background with white text */
         button {
             margin-top: 10px;
+            color: #ffffff;
+            background: rgba(0,0,0,0.65);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 12px;
+            cursor: pointer;
         }
 
         /* Message block */
         .message {
             padding: 8px 0;
+            color: #ffffff; /* ensure message text is white */
         }
 
-        /* When two .message elements are adjacent (same author, no divider between),
-           make them a little closer together. This only applies to consecutive messages
-           from the same author because we insert a .divider element between different authors. */
+        /* When two .message elements are adjacent (same author) make them a little closer together */
         .message + .message {
             padding-top: 4px;
             padding-bottom: 4px;
@@ -42,17 +60,24 @@
 
         /* Divider inserted between different authors */
         .divider {
-            border-bottom: 1px solid #ccc;
+            border-bottom: 1px solid rgba(255,255,255,0.25);
             margin: 6px 0;
         }
 
         .name {
             font-weight: bold;
             margin-right: 6px;
+            color: #ffffff; /* ensure name is white */
         }
 
         #messages {
             margin-top: 10px;
+        }
+
+        /* Small readability tweak so content stands out slightly from busy background */
+        /* Not changing layout or behavior — just a subtle backdrop for the message area */
+        #messages, input, textarea {
+            backdrop-filter: blur(2px);
         }
     </style>
 </head>
