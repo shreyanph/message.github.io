@@ -107,6 +107,56 @@
             pointer-events: auto;
         }
 
+        /* Emoji row and picker */
+        .emoji-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            position: relative; /* picker positioned relative to this */
+        }
+        .emoji-row textarea {
+            /* override the global 100% width so textarea flexes with button */
+            width: auto;
+            flex: 1 1 auto;
+        }
+        #emojiBtn {
+            min-width: 44px;
+            height: 44px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 18px;
+            line-height: 1;
+        }
+        .emoji-picker {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: rgba(0,0,0,0.95);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 8px;
+            border-radius: 8px;
+            z-index: 200;
+            width: 260px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+        }
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+        }
+        .emoji-btn {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        .emoji-btn:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
         /* Modal / panel for How To Use */
         .how-modal-backdrop {
             display: none; /* shown when active */
@@ -147,6 +197,8 @@
             body { margin: 20px; max-width: 100%; }
             /* revert button position on small screens so it doesn't go offscreen */
             #howBtn { left: 8px; top: 8px; }
+            .emoji-picker { right: 0; left: 0; width: auto; }
+            .emoji-grid { grid-template-columns: repeat(6, 1fr); }
         }
     </style>
 </head>
@@ -173,7 +225,21 @@ Charlie"></textarea>
     </select>
     <br><br>
 
-    <textarea id="messageInput" placeholder="Type a message..."></textarea>
+    <!-- emoji-row: textarea + emoji button + picker -->
+    <div class="emoji-row" id="emojiRow">
+      <textarea id="messageInput" placeholder="Type a message..."></textarea>
+
+      <!-- emoji button (opens picker) -->
+      <button id="emojiBtn" type="button" title="Insert emoji">😊</button>
+
+      <!-- emoji picker -->
+      <div id="emojiPicker" class="emoji-picker" aria-hidden="true">
+        <div class="emoji-grid" id="emojiGrid">
+          <!-- buttons inserted by JS -->
+        </div>
+      </div>
+    </div>
+
     <br>
     <button id="sendBtn">Send</button>
 
@@ -244,6 +310,12 @@ Charlie"></textarea>
     const howBackdrop = document.getElementById('howBackdrop');
     const howClose = document.getElementById('howClose');
 
+    // Emoji refs
+    const emojiBtn = document.getElementById('emojiBtn');
+    const emojiPicker = document.getElementById('emojiPicker');
+    const emojiGrid = document.getElementById('emojiGrid');
+    const emojiRow = document.getElementById('emojiRow');
+
     // Make the How-To button hookup robust (ensure handlers are attached after elements exist)
     window.addEventListener('load', () => {
       howBtn.addEventListener('click', () => {
@@ -255,7 +327,74 @@ Charlie"></textarea>
       howBackdrop.addEventListener('click', (e) => {
         if (e.target === howBackdrop) howBackdrop.style.display = 'none';
       });
+
+      // --- Emoji picker setup (only UI/behavior added) ---
+      const emojis = [
+        "😀","😃","😄","😁","😆","😅","😂","🙂",
+        "😉","😊","😍","😎","🤔","🙏","👍","👀",
+        "🎉","🔥","💀","😭","😜","🤩","😇","🤖",
+        "🫶","😴","🤝","👏","🤷","🙌","💯","✨"
+      ];
+
+      // populate grid
+      emojis.forEach(e => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'emoji-btn';
+        b.textContent = e;
+        b.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          insertEmojiAtCursor(messageInput, e);
+          // keep picker open for quick multi-insert; comment next line if you want it to stay open
+          emojiPicker.style.display = 'none';
+          emojiPicker.setAttribute('aria-hidden', 'true');
+          // focus back to textarea
+          messageInput.focus();
+        });
+        emojiGrid.appendChild(b);
+      });
+
+      // toggle picker
+      emojiBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const open = emojiPicker.style.display === 'block';
+        if (open) {
+          emojiPicker.style.display = 'none';
+          emojiPicker.setAttribute('aria-hidden', 'true');
+        } else {
+          emojiPicker.style.display = 'block';
+          emojiPicker.setAttribute('aria-hidden', 'false');
+        }
+      });
+
+      // click outside closes picker
+      document.addEventListener('click', (e) => {
+        if (!emojiRow.contains(e.target)) {
+          emojiPicker.style.display = 'none';
+          emojiPicker.setAttribute('aria-hidden', 'true');
+        }
+      });
+
+      // keyboard: Esc closes picker
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          emojiPicker.style.display = 'none';
+          emojiPicker.setAttribute('aria-hidden', 'true');
+        }
+      });
     });
+
+    // insert emoji at caret position in textarea
+    function insertEmojiAtCursor(textarea, emoji) {
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || 0;
+      const val = textarea.value;
+      textarea.value = val.slice(0, start) + emoji + val.slice(end);
+      const pos = start + emoji.length;
+      textarea.selectionStart = textarea.selectionEnd = pos;
+      // trigger input event in case anything listens
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 
     // color palette
     const colors = [
