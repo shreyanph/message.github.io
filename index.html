@@ -161,7 +161,7 @@ Charlie"></textarea>
         const messages = JSON.parse(localStorage.getItem('messages')) || [];
         let changed = false;
 
-        // ensure each message has a timestamp (so dividers can show them)
+        // ensure each message has a timestamp
         for (let i = 0; i < messages.length; i++) {
             if (!messages[i].time) {
                 messages[i].time = new Date().toISOString();
@@ -173,7 +173,6 @@ Charlie"></textarea>
         messagesDiv.innerHTML = "";
 
         // Add a timestamp ABOVE the first message (if any)
-        let topTimestampAdded = false;
         if (messages.length > 0) {
             const topTime = formatTimestamp(messages[0].time || new Date().toISOString());
             const tsRowTop = document.createElement('div');
@@ -189,7 +188,6 @@ Charlie"></textarea>
             rightLineTop.className = 'line';
             tsRowTop.appendChild(rightLineTop);
             messagesDiv.appendChild(tsRowTop);
-            topTimestampAdded = true;
         }
 
         messages.forEach((msg, index) => {
@@ -208,32 +206,26 @@ Charlie"></textarea>
             messagesDiv.appendChild(div);
 
             // if next message is by a different author, add timestamp row for THIS message's time
-            // but avoid duplicating the top timestamp if it already represented the boundary after the first message
             if (index < messages.length - 1 && messages[index].name !== messages[index + 1].name) {
-                // if this is the first index and we already added the top timestamp, skip adding duplicate
-                if (index === 0 && topTimestampAdded) {
-                    // skip adding; top timestamp already shows this message's time
-                } else {
-                    const timestamp = formatTimestamp(messages[index].time || new Date().toISOString());
+                const timestamp = formatTimestamp(messages[index].time || new Date().toISOString());
 
-                    const tsRow = document.createElement('div');
-                    tsRow.className = 'timestamp-row';
+                const tsRow = document.createElement('div');
+                tsRow.className = 'timestamp-row';
 
-                    const leftLine = document.createElement('div');
-                    leftLine.className = 'line';
-                    tsRow.appendChild(leftLine);
+                const leftLine = document.createElement('div');
+                leftLine.className = 'line';
+                tsRow.appendChild(leftLine);
 
-                    const tsText = document.createElement('div');
-                    tsText.className = 'timestamp-text';
-                    tsText.textContent = timestamp;
-                    tsRow.appendChild(tsText);
+                const tsText = document.createElement('div');
+                tsText.className = 'timestamp-text';
+                tsText.textContent = timestamp;
+                tsRow.appendChild(tsText);
 
-                    const rightLine = document.createElement('div');
-                    rightLine.className = 'line';
-                    tsRow.appendChild(rightLine);
+                const rightLine = document.createElement('div');
+                rightLine.className = 'line';
+                tsRow.appendChild(rightLine);
 
-                    messagesDiv.appendChild(tsRow);
-                }
+                messagesDiv.appendChild(tsRow);
             }
         });
 
