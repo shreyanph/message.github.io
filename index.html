@@ -192,7 +192,7 @@
         .account-btn { width: 260px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 16px; }
         .account-btn:hover { background: rgba(255,255,255,0.06); }
 
-        /* Admin panel: centered (replaces Name List area) */
+        /* Admin panel: centered (replaces prior Name List area) */
         #adminPanel {
             margin: 8px auto 16px auto;
             z-index: 500;
@@ -210,6 +210,13 @@
         #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
         .remove-account { background: rgba(255,255,255,0.06); border: none; color: #fff; padding: 4px 8px; border-radius:6px; cursor:pointer; }
         .remove-account:hover { background: rgba(255,255,255,0.12); }
+
+        /* Make Administrator remove button hidden/disabled styling (if ever present) */
+        .remove-account.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            background: rgba(255,255,255,0.02);
+        }
 
         /* Responsive fallback */
         @media (max-width: 640px) {
@@ -289,7 +296,7 @@
       <button class="close" id="howClose" aria-label="Close">&times;</button>
       <h3>How To Use</h3>
       <ol>
-        <li><u>1 person</u> should create the accounts in Administrator and save them to the cloud using the Admin panel.</li>
+        <li><u>Administrator</u> should create the accounts in Administrator and save them to the cloud using the Admin panel.</li>
         <li>Each user should then select their name from the dropdown in the "Message Board" section.</li>
         <li>Each user can now use the text box below to send messages to one another, with auto generated separators &amp; timestamps.</li>
       </ol>
@@ -360,16 +367,27 @@
 
     // ---------- accounts doc ref (cloud) ----------
     const accountsDocRef = doc(db, 'meta', 'accounts');
+    const ADMIN_NAME = 'Administrator';
 
-    // Ensure accounts doc exists (seed Administrator) if not present
-    (async function seedAccountsIfMissing() {
+    // Ensure accounts doc exists and that Administrator exists in the list.
+    (async function ensureAdminPresent() {
       try {
         const snap = await getDoc(accountsDocRef);
         if (!snap.exists()) {
-          await setDoc(accountsDocRef, { list: ['Administrator'] });
+          // create doc with Administrator
+          await setDoc(accountsDocRef, { list: [ADMIN_NAME] });
+        } else {
+          const data = snap.data();
+          const list = Array.isArray(data?.list) ? data.list : [];
+          if (!list.includes(ADMIN_NAME)) {
+            // add Administrator back while preserving existing accounts
+            const updated = [ADMIN_NAME, ...list];
+            await setDoc(accountsDocRef, { list: updated });
+          }
         }
       } catch (err) {
-        console.warn("Could not seed accounts (permission or offline):", err?.message);
+        // If permission prevents writing, we still continue; onSnapshot will show whatever is present.
+        console.warn("Could not ensure Administrator present (permissions/offline):", err?.message);
       }
     })();
 
@@ -385,31 +403,60 @@
     function populateAccounts(list) {
       // Build login overlay account buttons
       accountButtons.innerHTML = "";
-      if (!Array.isArray(list) || list.length === 0) {
-        appendAccountButton('Administrator');
+      const safeList = Array.isArray(list) ? list.slice() : [];
+      if (safeList.length === 0) {
+        appendAccountButton(ADMIN_NAME);
       } else {
-        list.forEach(name => appendAccountButton(name));
+        // Always ensure ADMIN_NAME appears first (if present)
+        if (!safeList.includes(ADMIN_NAME)) safeList.unshift(ADMIN_NAME);
+        // Remove duplicates and preserve order
+        const seen = new Set();
+        const unique = [];
+        for (const n of safeList) {
+          if (!seen.has(n)) { seen.add(n); unique.push(n); }
+        }
+        unique.forEach(name => appendAccountButton(name));
       }
 
       // Build admin panel list
       accountsList.innerHTML = "";
       if (Array.isArray(list)) {
-        list.forEach(name => {
+        // keep Administrator at top if present
+        const ordered = list.includes(ADMIN_NAME) ? [ADMIN_NAME, ...list.filter(n => n !== ADMIN_NAME)] : list;
+        ordered.forEach(name => {
           const li = document.createElement('li');
-          li.textContent = name;
-          const rm = document.createElement('button');
-          rm.className = 'remove-account';
-          rm.textContent = 'Remove';
-          rm.addEventListener('click', async () => {
-            if (!confirm(`Remove account "${name}" from cloud? This will remove it for everyone.`)) return;
-            try {
-              const updated = list.filter(n => n !== name);
-              await setDoc(accountsDocRef, { list: updated });
-            } catch (err) {
-              alert('Failed to remove account: ' + err.message);
-            }
-          });
-          li.appendChild(rm);
+          const label = document.createElement('span');
+          label.textContent = name;
+          li.appendChild(label);
+
+          // Remove button: NOT shown (or disabled) for Administrator
+          if (name === ADMIN_NAME) {
+            const rm = document.createElement('button');
+            rm.className = 'remove-account disabled';
+            rm.textContent = 'Remove';
+            rm.title = 'Administrator cannot be removed';
+            rm.disabled = true;
+            li.appendChild(rm);
+          } else {
+            const rm = document.createElement('button');
+            rm.className = 'remove-account';
+            rm.textContent = 'Remove';
+            rm.addEventListener('click', async () => {
+              if (!confirm(`Remove account "${name}" from cloud? This will remove it for everyone.`)) return;
+              try {
+                const snap = await getDoc(accountsDocRef);
+                const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+                // protect Administrator even if current local list differs
+                const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
+                // ensure Administrator remains
+                if (!filtered.includes(ADMIN_NAME)) filtered.unshift(ADMIN_NAME);
+                await setDoc(accountsDocRef, { list: filtered });
+              } catch (err) {
+                alert('Failed to remove account: ' + err.message);
+              }
+            });
+            li.appendChild(rm);
+          }
           accountsList.appendChild(li);
         });
       }
@@ -422,13 +469,18 @@
       placeholder.selected = true;
       placeholder.textContent = "Select a name";
       nameSelect.appendChild(placeholder);
-      if (Array.isArray(list)) {
-        list.forEach(n => {
-          const opt = document.createElement('option');
-          opt.value = n;
-          opt.textContent = n;
-          nameSelect.appendChild(opt);
-        });
+
+      const finalList = Array.isArray(list) ? list : [];
+      // Ensure Administrator is included even if list empty
+      if (!finalList.includes(ADMIN_NAME)) finalList.unshift(ADMIN_NAME);
+      const seen2 = new Set();
+      for (const n of finalList) {
+        if (!n || seen2.has(n)) continue;
+        seen2.add(n);
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        nameSelect.appendChild(opt);
       }
     }
 
@@ -448,6 +500,11 @@
     addAccountBtn.addEventListener('click', async () => {
       const v = (newAccountInput.value || "").trim();
       if (!v) return;
+      if (v === ADMIN_NAME) {
+        alert('Administrator already always exists.');
+        newAccountInput.value = '';
+        return;
+      }
       try {
         const snap = await getDoc(accountsDocRef);
         const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
@@ -455,7 +512,8 @@
           alert('Account already exists.');
           return;
         }
-        const updated = [...existing, v];
+        // ensure Administrator preserved
+        const updated = existing.includes(ADMIN_NAME) ? [...existing, v] : [ADMIN_NAME, ...existing, v];
         await setDoc(accountsDocRef, { list: updated });
         newAccountInput.value = '';
       } catch (err) {
@@ -471,7 +529,7 @@
       loginOverlay.style.display = 'none';
       pageInner.style.display = '';
       // show admin panel only for Administrator
-      if (currentUser === 'Administrator') {
+      if (currentUser === ADMIN_NAME) {
         adminPanel.style.display = 'block';
         adminPanel.setAttribute('aria-hidden', 'false');
       } else {
@@ -607,4 +665,138 @@
       if (isNaN(d)) return "";
       const month = d.getMonth() + 1;
       const day = d.getDate();
-      const year =
+      const year = d.getFullYear();
+      let hour = d.getHours();
+      const minute = d.getMinutes().toString().padStart(2, '0');
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12;
+      if (hour === 0) hour = 12;
+      return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
+    }
+
+    // -------------------- Messages (collection: messages) --------------------
+    const messagesCol = collection(db, 'messages');
+    const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
+
+    // realtime listener for messages
+    onSnapshot(messagesQuery, snapshot => {
+      const msgs = [];
+      snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        msgs.push({
+          id: docSnap.id,
+          name: d.name,
+          text: d.text || "",
+          time: d.time || null
+        });
+      });
+      renderMessages(msgs);
+    }, err => {
+      console.error("Realtime messages error:", err);
+    });
+
+    // Render messages such that each timestamp separates authors and corresponds to the block BELOW it
+    function renderMessages(messages) {
+      messagesDiv.innerHTML = "";
+      if (messages.length === 0) return;
+
+      const topTime = formatTimestamp(messages[0].time);
+      messagesDiv.appendChild(createTimestampRow(topTime));
+
+      messages.forEach((m, i) => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.style.background = colorForName(m.name);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = (m.name || "") + ': ';
+
+        div.appendChild(nameSpan);
+        div.appendChild(document.createTextNode(m.text));
+        messagesDiv.appendChild(div);
+
+        if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
+          const nextTime = formatTimestamp(messages[i + 1].time);
+          messagesDiv.appendChild(createTimestampRow(nextTime));
+        }
+      });
+
+      if (messagesDiv.lastElementChild) {
+        messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+
+    function createTimestampRow(text) {
+      const row = document.createElement('div');
+      row.className = 'timestamp-row';
+      const left = document.createElement('div'); left.className = 'line';
+      const mid = document.createElement('div'); mid.className = 'timestamp-text'; mid.textContent = text || '';
+      const right = document.createElement('div'); right.className = 'line';
+      row.appendChild(left); row.appendChild(mid); row.appendChild(right);
+      return row;
+    }
+
+    // -------------------- Retention --------------------
+    async function enforceRetention() {
+      try {
+        const snap = await getDocs(messagesQuery);
+        const total = snap.size;
+        if (total > 100) {
+          const numToDelete = total - 10;
+          const docsToDelete = snap.docs.slice(0, numToDelete);
+          const deletes = docsToDelete.map(d => deleteDoc(doc(db, 'messages', d.id)));
+          await Promise.all(deletes);
+        }
+      } catch (err) {
+        console.error('Retention enforcement failed:', err);
+      }
+    }
+
+    // -------------------- Add message --------------------
+    sendBtn.addEventListener('click', addMessage);
+    messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addMessage();
+      }
+    });
+
+    async function addMessage() {
+      const name = (nameSelect.value || "").trim();
+      const text = (messageInput.value || "").trim();
+      if (!name || !text) return;
+      try {
+        await addDoc(messagesCol, {
+          name,
+          text,
+          time: serverTimestamp()
+        });
+        messageInput.value = "";
+        await enforceRetention();
+      } catch (err) {
+        alert("Failed to send message: " + err.message);
+      }
+    }
+
+    // -------------------- Clear messages (cloud) --------------------
+    clearBtn.addEventListener('click', async () => {
+      if (!confirm("Delete all messages from cloud? This cannot be undone.")) return;
+      try {
+        const snap = await getDocs(messagesCol);
+        const deletes = [];
+        snap.forEach(d => deletes.push(deleteDoc(doc(db, 'messages', d.id))));
+        await Promise.all(deletes);
+      } catch (err) {
+        alert("Failed to clear messages: " + err.message);
+      }
+    });
+
+    // -------------------- Bootstrap: nothing local for names now; accounts drive nameSelect --------------------
+    (function init() {
+      // accounts onSnapshot will populate nameSelect; nothing else needed here
+    })();
+  </script>
+
+</body>
+</html>
