@@ -440,9 +440,6 @@
       }
     })();
 
-    // Ensure passwords doc exists (if not, leave it empty—will be created on first set)
-    // No initial write required.
-
     // Real-time listener for accounts — updates login screen, admin panel, and the nameSelect dropdown
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
@@ -562,7 +559,7 @@
       });
 
       b.addEventListener('click', () => {
-        // sign in as this account -> but first require password flow
+        // start password flow for this account
         startPasswordFlowFor(name);
       });
       accountButtons.appendChild(b);
@@ -738,23 +735,36 @@
         adminPanel.style.display = 'none';
         adminPanel.setAttribute('aria-hidden', 'true');
       }
-      // ensure nameSelect includes this account and select it
-      let found = false;
-      for (let i = 0; i < nameSelect.options.length; i++) {
-        if (nameSelect.options[i].value === accountName) {
-          nameSelect.selectedIndex = i;
-          found = true;
-          break;
+
+      // --- NEW: enforce send-as restriction ---
+      if (currentUser === ADMIN_NAME) {
+        // Admin can send as anyone -> keep select enabled
+        nameSelect.disabled = false;
+        // Do not auto-select an account for admin; keep previous selection or placeholder
+      } else {
+        // Non-admin: lock send identity to currentUser
+        // Ensure dropdown contains the current user, select it, and disable the dropdown
+        let found = false;
+        for (let i = 0; i < nameSelect.options.length; i++) {
+          if (nameSelect.options[i].value === accountName) {
+            nameSelect.selectedIndex = i;
+            found = true;
+            break;
+          }
         }
+        if (!found) {
+          const opt = document.createElement('option');
+          opt.value = accountName;
+          opt.textContent = accountName;
+          nameSelect.appendChild(opt);
+          nameSelect.value = accountName;
+        }
+        nameSelect.disabled = true;
       }
-      if (!found) {
-        const opt = document.createElement('option');
-        opt.value = accountName;
-        opt.textContent = accountName;
-        nameSelect.appendChild(opt);
-        nameSelect.value = accountName;
-      }
-      nameSelect.focus();
+
+      // focus message area for quick sending
+      messageInput.focus();
+
       // clear password flow UI state
       passwordArea.style.display = 'none';
       accountButtons.style.display = 'flex'; // keep consistent for next login
@@ -764,125 +774,6 @@
       avatarCircle.textContent = '';
       loginHint.textContent = 'Hover an account to preview initial, click to sign in';
       pwPromptText.textContent = '';
-    }
-
-    // Make the How-To button hookup robust (ensure handlers are attached after elements exist)
-    window.addEventListener('load', () => {
-      howBtn.addEventListener('click', () => {
-        howBackdrop.style.display = 'flex';
-      });
-      howClose.addEventListener('click', () => {
-        howBackdrop.style.display = 'none';
-      });
-      howBackdrop.addEventListener('click', (e) => {
-        if (e.target === howBackdrop) howBackdrop.style.display = 'none';
-      });
-
-      // --- Emoji picker setup (only UI/behavior added) ---
-      const emojis = [
-        "😀","😃","😄","😁","😆","😅","😂","🙂",
-        "😉","😊","😍","😎","🤔","🙏","👍","👀",
-        "🎉","🔥","💀","😭","😜","🤩","😇","🤖",
-        "🫶","😴","🤝","👏","🤷","🙌","💯","✨"
-      ];
-
-      // populate grid
-      emojis.forEach(e => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'emoji-btn';
-        b.textContent = e;
-        b.addEventListener('click', (ev) => {
-          ev.preventDefault();
-          insertEmojiAtCursor(messageInput, e);
-          emojiPicker.style.display = 'none';
-          emojiPicker.setAttribute('aria-hidden', 'true');
-          messageInput.focus();
-        });
-        emojiGrid.appendChild(b);
-      });
-
-      // toggle picker
-      emojiBtn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        const open = emojiPicker.style.display === 'block';
-        if (open) {
-          emojiPicker.style.display = 'none';
-          emojiPicker.setAttribute('aria-hidden', 'true');
-        } else {
-          emojiPicker.style.display = 'block';
-          emojiPicker.setAttribute('aria-hidden', 'false');
-        }
-      });
-
-      // click outside closes picker
-      document.addEventListener('click', (e) => {
-        if (!emojiRow.contains(e.target)) {
-          emojiPicker.style.display = 'none';
-          emojiPicker.setAttribute('aria-hidden', 'true');
-        }
-      });
-
-      // keyboard: Esc closes picker
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          emojiPicker.style.display = 'none';
-          emojiPicker.setAttribute('aria-hidden', 'true');
-        }
-      });
-    });
-
-    // insert emoji at caret position in textarea
-    function insertEmojiAtCursor(textarea, emoji) {
-      const start = textarea.selectionStart || 0;
-      const end = textarea.selectionEnd || 0;
-      const val = textarea.value;
-      textarea.value = val.slice(0, start) + emoji + val.slice(end);
-      const pos = start + emoji.length;
-      textarea.selectionStart = textarea.selectionEnd = pos;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
-    // color palette
-    const colors = [
-      'rgba(0, 180, 0, 0.7)',
-      'rgba(255, 165, 0, 0.85)',
-      'rgba(220, 20, 60, 0.85)',
-      'rgba(128, 0, 128, 0.85)',
-      'rgba(255, 0, 255, 0.85)'
-    ];
-
-    // deterministic name -> color via hash so every device sees same mapping
-    function hashStringToIndex(s, mod) {
-      let h = 5381;
-      for (let i = 0; i < s.length; i++) {
-        h = ((h << 5) + h) + s.charCodeAt(i);
-        h = h & 0xffffffff;
-      }
-      return Math.abs(h) % mod;
-    }
-    function colorForName(name) {
-      const idx = hashStringToIndex((name||"").toLowerCase(), colors.length);
-      return colors[idx];
-    }
-
-    function formatTimestamp(thing) {
-      if (!thing) return "";
-      let d;
-      if (typeof thing === 'string') d = new Date(thing);
-      else if (thing && typeof thing.toDate === 'function') d = thing.toDate();
-      else if (thing instanceof Date) d = thing;
-      else d = new Date();
-      if (isNaN(d)) return "";
-      const month = d.getMonth() + 1;
-      const day = d.getDate();
-      const year = d.getFullYear();
-      let hour = d.getHours();
-      const minute = d.getMinutes().toString().padStart(2, '0');
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      hour = hour % 12;
-      if (hour === 0) hour = 12;
-      return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
     }
 
     // -------------------- Messages (collection: messages) --------------------
@@ -948,6 +839,25 @@
       return row;
     }
 
+    function formatTimestamp(thing) {
+      if (!thing) return "";
+      let d;
+      if (typeof thing === 'string') d = new Date(thing);
+      else if (thing && typeof thing.toDate === 'function') d = thing.toDate();
+      else if (thing instanceof Date) d = thing;
+      else d = new Date();
+      if (isNaN(d)) return "";
+      const month = d.getMonth() + 1;
+      const day = d.getDate();
+      const year = d.getFullYear();
+      let hour = d.getHours();
+      const minute = d.getMinutes().toString().padStart(2, '0');
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12;
+      if (hour === 0) hour = 12;
+      return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
+    }
+
     // -------------------- Retention --------------------
     async function enforceRetention() {
       try {
@@ -974,12 +884,21 @@
     });
 
     async function addMessage() {
-      const name = (nameSelect.value || "").trim();
+      // IMPORTANT: if logged in as a normal user, force the name to currentUser
+      let sendName;
+      if (currentUser && currentUser !== ADMIN_NAME) {
+        sendName = currentUser;
+      } else {
+        // Admin or not logged in fallback - use selected name
+        sendName = (nameSelect.value || "").trim();
+      }
+
       const text = (messageInput.value || "").trim();
-      if (!name || !text) return;
+      if (!sendName || !text) return;
+
       try {
         await addDoc(messagesCol, {
-          name,
+          name: sendName,
           text,
           time: serverTimestamp()
         });
