@@ -18,7 +18,7 @@
       position: relative;
     }
 
-    /* center content area (replaces previous body max-width) */
+    /* center content area */
     .page-inner {
       position: relative;
       max-width: 600px;
@@ -48,16 +48,26 @@
       cursor: pointer;
     }
 
-    /* message bubble */
+    /* messages container: stack children vertically */
+    #messages {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;              /* vertical spacing between rows (bubbles / timestamp rows) */
+    }
+
+    /* message bubble: inline-block so content sizes naturally, but each bubble becomes its own flex row child */
     .message {
       border-radius: 999px;
       padding: 10px 16px;
-      margin: 6px 0;
+      /* no margin here because #messages gap handles spacing */
       display: inline-block;
+      align-self: flex-start;  /* ensure bubble stays left-aligned; admin could be same style */
       max-width: 100%;
-      color: #ffffff; /* fallback */
+      color: #ffffff;
       line-height: 1.25;
       word-wrap: break-word;
+      box-sizing: border-box;
     }
     .message .name { font-weight: 700; margin-right: 8px; color: #ffffff; display:inline; }
     .message .content { display:inline; color: #ffffff; }
@@ -66,8 +76,6 @@
       border-bottom: 1px solid rgba(255,255,255,0.25);
       margin: 8px 0;
     }
-
-    #messages { margin-top: 10px; }
 
     #messages, input, textarea, select { backdrop-filter: blur(2px); }
 
@@ -150,7 +158,6 @@
     #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
     #passwordArea input[type="password"] { flex:1; padding:8px; }
 
-    /* Clear button disabled look */
     button[disabled] { opacity: 0.45; cursor: not-allowed; }
 
     @media (max-width: 640px) {
@@ -223,13 +230,10 @@
     <button id="sendBtn">Send</button>
 
     <h2>Message History</h2>
-    <!-- Clear button will be enabled ONLY for Administrator -->
     <button id="clearBtn" title="Only Administrator may clear history">Clear Message History (cloud)</button>
 
     <div id="messages" aria-live="polite"></div>
   </div>
-
-  <!-- How to use modal omitted for brevity (unchanged from previous) -->
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
@@ -325,6 +329,7 @@
       }
     })();
 
+    // accounts listener
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
       populateAccounts(list);
@@ -415,7 +420,6 @@
         opt.textContent = n;
         nameSelect.appendChild(opt);
       }
-      // update clear button state if no user logged in (default locked)
       updateClearButtonState();
     }
 
@@ -534,6 +538,7 @@
       }
     });
 
+    const submitPwBtn = document.getElementById('submitPwBtn');
     submitPwBtn.addEventListener('click', async () => {
       const p = (passwordInput.value || '').trim();
       if (!p) { alert('Please enter your password.'); return; }
@@ -611,7 +616,7 @@
       updateClearButtonState();
     }
 
-    // --- messages listener & robust renderer ---
+    // messages listener & renderer
     const messagesCol = collection(db, 'messages');
     const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
 
@@ -647,7 +652,6 @@
         // wrapper bubble
         const div = document.createElement('div');
         div.className = 'message';
-        // set background color with fallback
         try {
           div.style.background = colorForName(who);
         } catch (e) {
@@ -660,7 +664,7 @@
 
         const contentSpan = document.createElement('span');
         contentSpan.className = 'content';
-        contentSpan.textContent = ' ' + text; // leading space so name and message separate
+        contentSpan.textContent = ' ' + text;
 
         div.appendChild(nameSpan);
         div.appendChild(contentSpan);
@@ -673,7 +677,7 @@
         }
       }
 
-      // Ensure we scroll to bottom so messages visible
+      // Scroll to bottom
       if (messagesDiv.lastElementChild) {
         messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
@@ -729,7 +733,7 @@
       return colors[idx];
     }
 
-    // retention (unchanged)
+    // retention
     async function enforceRetention() {
       try {
         const snap = await getDocs(messagesQuery);
@@ -745,7 +749,7 @@
       }
     }
 
-    // send message (respects currentUser restrictions)
+    // send message
     sendBtn.addEventListener('click', addMessage);
     messageInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -776,7 +780,7 @@
       }
     }
 
-    // CLEAR button: only admin allowed. UI disabled for others.
+    // CLEAR button: only admin allowed
     function updateClearButtonState() {
       if (currentUser === ADMIN_NAME) {
         clearBtn.disabled = false;
@@ -788,7 +792,6 @@
     }
 
     clearBtn.addEventListener('click', async () => {
-      // double-check server-side intent by checking currentUser locally
       if (currentUser !== ADMIN_NAME) {
         alert('Only Administrator may clear message history.');
         updateClearButtonState();
@@ -805,14 +808,13 @@
       }
     });
 
-    // accounts/passwords code follows same logic as earlier (kept)
+    // accounts/passwords: create & verify (same pattern as before)
     (function initAccounts() {
-      // nothing extra here; onSnapshot on accountsDocRef will populate UI
+      // accounts onSnapshot will populate UI
     })();
 
-    // ensure clear button initial state (no user logged in)
+    // initial clear button state
     updateClearButtonState();
-
   </script>
 </body>
 </html>
