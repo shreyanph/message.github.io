@@ -46,7 +46,7 @@
       position: fixed;
       top: 12px;
       right: 12px;
-      z-index: 4000;
+      z-index: 5001; /* high so it shows above overlays */
       background: rgba(0,0,0,0.7);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
@@ -706,9 +706,8 @@
         adminPanel.setAttribute('aria-hidden', 'true');
       }
 
-      // NEW: When Administrator logs in, automatically set the dropdown to Administrator
+      // When Administrator logs in, automatically set the dropdown to Administrator
       if (currentUser === ADMIN_NAME) {
-        // Ensure Administrator option exists and select it
         let found = false;
         for (let i = 0; i < nameSelect.options.length; i++) {
           if (nameSelect.options[i].value === ADMIN_NAME) {
@@ -724,7 +723,6 @@
           nameSelect.appendChild(opt);
           nameSelect.value = ADMIN_NAME;
         }
-        // keep dropdown enabled for admin (admin can still send as others if desired)
         nameSelect.disabled = false;
       } else {
         // Non-admins: lock send identity to currentUser
@@ -758,34 +756,28 @@
       loginHint.textContent = 'Hover an account to preview initial, click to sign in';
       pwPromptText.textContent = '';
 
-      // Show sign out button when signed in
-      signOutBtn.style.display = '';
+      // *** FIX: explicitly show sign out with a concrete display style
+      signOutBtn.style.display = 'inline-block';
 
       updateClearButtonState();
     }
 
-    // SIGN OUT behavior (single requested edit)
+    // SIGN OUT behavior
     function signOut() {
-      // clear current user and UI states, return to lock screen
       currentUser = null;
-      // hide page UI, show lock screen
       pageInner.style.display = 'none';
       loginOverlay.style.display = '';
-      // hide admin panel and password area
       adminPanel.style.display = 'none';
       passwordArea.style.display = 'none';
       passwordArea.setAttribute('aria-hidden', 'true');
-      // reset visual pieces
       avatarCircle.textContent = '';
       accountButtons.style.display = 'flex';
-      // hide sign out button
+      // hide sign out button explicitly
       signOutBtn.style.display = 'none';
-      // reset name selection so next user isn't preselected
       if (nameSelect) {
         nameSelect.selectedIndex = 0;
         nameSelect.disabled = false;
       }
-      // update clear button visibility (admin only)
       updateClearButtonState();
     }
 
@@ -1019,7 +1011,7 @@
 
     // init
     (function init() {
-      // keep clear hidden until login (updateClearButtonState will handle visibility after login)
+      // ensure clear and sign out hidden until login (explicit)
       clearBtn.style.display = 'none';
       signOutBtn.style.display = 'none';
       updateClearButtonState();
