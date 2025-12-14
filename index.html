@@ -211,12 +211,17 @@
         .remove-account { background: rgba(255,255,255,0.06); border: none; color: #fff; padding: 4px 8px; border-radius:6px; cursor:pointer; }
         .remove-account:hover { background: rgba(255,255,255,0.12); }
 
-        /* Make Administrator remove button hidden/disabled styling (if ever present) */
+        /* Make Administrator remove button hidden/disabled styling */
         .remove-account.disabled {
             opacity: 0.45;
             cursor: not-allowed;
             background: rgba(255,255,255,0.02);
         }
+
+        /* Password prompt area inside login card */
+        #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
+        #passwordArea .pw-row { display:flex; gap:8px; align-items:center; }
+        #passwordArea input[type="password"] { flex:1; padding:8px; }
 
         /* Responsive fallback */
         @media (max-width: 640px) {
@@ -236,12 +241,34 @@
     <div class="login-card" role="presentation">
       <!-- avatar now has an id for JS control and is empty by default -->
       <div id="avatarCircle" class="avatar" aria-hidden="true"></div>
-      <div class="login-title">Select an account to sign in</div>
+      <div class="login-title" id="loginTitle">Select an account to sign in</div>
 
       <!-- Dynamic list of accounts from cloud -->
       <div id="accountButtons" style="display:flex; flex-direction:column; gap:8px; align-items:center; width:100%;"></div>
 
-      <div style="font-size:0.85em; color:rgba(255,255,255,0.75);">Hover an account to preview initial, click to sign in</div>
+      <!-- Password prompt area that appears when selecting an account -->
+      <div id="passwordArea" aria-hidden="true">
+        <div id="pwPromptText" style="margin-bottom:4px; color:rgba(255,255,255,0.9); font-size:0.95em;"></div>
+        <!-- For entering existing password -->
+        <div id="enterPw" style="display:none; gap:8px; flex-direction:column;">
+          <input id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" />
+          <div style="display:flex; gap:8px;">
+            <button id="submitPwBtn">Submit</button>
+            <button id="cancelPwBtn" style="background:rgba(255,255,255,0.06); color:#fff;">Cancel</button>
+          </div>
+        </div>
+        <!-- For creating new password -->
+        <div id="createPw" style="display:none; gap:8px; flex-direction:column;">
+          <input id="newPasswordInput" type="password" placeholder="New password" />
+          <input id="newPasswordRetype" type="password" placeholder="Retype new password" />
+          <div style="display:flex; gap:8px;">
+            <button id="createPwBtn">Create</button>
+            <button id="cancelCreateBtn" style="background:rgba(255,255,255,0.06); color:#fff;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="loginHint" style="font-size:0.85em; color:rgba(255,255,255,0.75);">Hover an account to preview initial, click to sign in</div>
     </div>
   </div>
 
@@ -336,7 +363,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // DOM refs (removed Name List refs as requested)
+    // DOM refs
     const nameSelect = document.getElementById('nameSelect');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -363,34 +390,58 @@
     const addAccountBtn = document.getElementById('addAccountBtn');
     const accountsList = document.getElementById('accountsList');
     const avatarCircle = document.getElementById('avatarCircle');
+    const passwordArea = document.getElementById('passwordArea');
+    const pwPromptText = document.getElementById('pwPromptText');
+    const enterPw = document.getElementById('enterPw');
+    const createPw = document.getElementById('createPw');
+    const passwordInput = document.getElementById('passwordInput');
+    const submitPwBtn = document.getElementById('submitPwBtn');
+    const cancelPwBtn = document.getElementById('cancelPwBtn');
+    const newPasswordInput = document.getElementById('newPasswordInput');
+    const newPasswordRetype = document.getElementById('newPasswordRetype');
+    const createPwBtn = document.getElementById('createPwBtn');
+    const cancelCreateBtn = document.getElementById('cancelCreateBtn');
+    const loginTitle = document.getElementById('loginTitle');
+    const loginHint = document.getElementById('loginHint');
 
     // hide the message-board UI until login
     pageInner.style.display = 'none';
 
-    // ---------- accounts doc ref (cloud) ----------
+    // ---------- accounts & passwords doc refs (cloud) ----------
     const accountsDocRef = doc(db, 'meta', 'accounts');
+    const passwordsDocRef = doc(db, 'meta', 'passwords');
     const ADMIN_NAME = 'Administrator';
 
-    // Ensure accounts doc exists and that Administrator exists in the list.
+    // Utility: SHA-256 hex hash of a password using SubtleCrypto
+    async function hashPassword(password) {
+      const enc = new TextEncoder();
+      const data = enc.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Ensure accounts doc exists and Administrator remains
     (async function ensureAdminPresent() {
       try {
         const snap = await getDoc(accountsDocRef);
         if (!snap.exists()) {
-          // create doc with Administrator
           await setDoc(accountsDocRef, { list: [ADMIN_NAME] });
         } else {
           const data = snap.data();
           const list = Array.isArray(data?.list) ? data.list : [];
           if (!list.includes(ADMIN_NAME)) {
-            // add Administrator back while preserving existing accounts
             const updated = [ADMIN_NAME, ...list];
-            await setDoc(accountsDocRef, { list: updated });
+            await setDoc(accountsDocRef, { list: updated }, { merge: true });
           }
         }
       } catch (err) {
         console.warn("Could not ensure Administrator present (permissions/offline):", err?.message);
       }
     })();
+
+    // Ensure passwords doc exists (if not, leave it empty—will be created on first set)
+    // No initial write required.
 
     // Real-time listener for accounts — updates login screen, admin panel, and the nameSelect dropdown
     onSnapshot(accountsDocRef, snap => {
@@ -445,7 +496,20 @@
                 const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
                 const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
                 if (!filtered.includes(ADMIN_NAME)) filtered.unshift(ADMIN_NAME);
-                await setDoc(accountsDocRef, { list: filtered });
+                await setDoc(accountsDocRef, { list: filtered }, { merge: true });
+                // also remove any password entry for that account (if exists)
+                try {
+                  const pwSnap = await getDoc(passwordsDocRef);
+                  if (pwSnap.exists()) {
+                    const map = pwSnap.data().map || {};
+                    if (map[name]) {
+                      delete map[name];
+                      await setDoc(passwordsDocRef, { map }, { merge: true });
+                    }
+                  }
+                } catch (err) {
+                  console.warn('Could not remove password entry:', err?.message);
+                }
               } catch (err) {
                 alert('Failed to remove account: ' + err.message);
               }
@@ -486,21 +550,20 @@
 
       // Hover behavior: show capitalized initial in avatarCircle while hovered
       b.addEventListener('mouseenter', () => {
-        try {
+        // only show when not in password flow
+        if (!passwordFlow.active) {
           const ch = (name && typeof name === 'string') ? name.trim().charAt(0).toUpperCase() : '';
           avatarCircle.textContent = ch;
-        } catch (e) {
-          avatarCircle.textContent = '';
         }
       });
       b.addEventListener('mouseleave', () => {
-        // clear avatar when not hovering
-        avatarCircle.textContent = '';
+        // clear avatar only if not in password flow and not selected
+        if (!passwordFlow.active) avatarCircle.textContent = '';
       });
 
       b.addEventListener('click', () => {
-        // sign in as this account
-        loginAs(name);
+        // sign in as this account -> but first require password flow
+        startPasswordFlowFor(name);
       });
       accountButtons.appendChild(b);
     }
@@ -522,7 +585,7 @@
           return;
         }
         const updated = existing.includes(ADMIN_NAME) ? [...existing, v] : [ADMIN_NAME, ...existing, v];
-        await setDoc(accountsDocRef, { list: updated });
+        await setDoc(accountsDocRef, { list: updated }, { merge: true });
         newAccountInput.value = '';
       } catch (err) {
         alert('Failed to add account: ' + err.message);
@@ -531,7 +594,138 @@
 
     // login state
     let currentUser = null;
-    function loginAs(accountName) {
+
+    // Track password flow state
+    const passwordFlow = {
+      active: false,
+      account: null,
+      mode: null // 'enter' or 'create'
+    };
+
+    async function startPasswordFlowFor(accountName) {
+      passwordFlow.active = true;
+      passwordFlow.account = accountName;
+      passwordFlow.mode = null;
+      // hide account buttons but keep card & avatar
+      accountButtons.style.display = 'none';
+      passwordArea.style.display = 'flex';
+      passwordArea.setAttribute('aria-hidden', 'false');
+      loginHint.textContent = ''; // hide hint
+
+      // set avatar to selected initial and keep it
+      avatarCircle.textContent = (accountName && typeof accountName === 'string') ? accountName.trim().charAt(0).toUpperCase() : '';
+
+      // Decide if password exists in cloud for this account
+      pwPromptText.textContent = `Sign in as ${accountName}`;
+      try {
+        const pwSnap = await getDoc(passwordsDocRef);
+        const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
+        if (map && map[accountName]) {
+          // password exists → show Enter password UI
+          passwordFlow.mode = 'enter';
+          enterPw.style.display = 'flex';
+          createPw.style.display = 'none';
+          passwordInput.value = '';
+          passwordInput.focus();
+        } else {
+          // no password set → prompt to create
+          passwordFlow.mode = 'create';
+          enterPw.style.display = 'none';
+          createPw.style.display = 'flex';
+          newPasswordInput.value = '';
+          newPasswordRetype.value = '';
+          newPasswordInput.focus();
+        }
+      } catch (err) {
+        // on error, default to create (safer)
+        passwordFlow.mode = 'create';
+        enterPw.style.display = 'none';
+        createPw.style.display = 'flex';
+      }
+    }
+
+    // Cancel handlers: return to account list, clear avatar
+    cancelPwBtn.addEventListener('click', () => {
+      endPasswordFlow();
+    });
+    cancelCreateBtn.addEventListener('click', () => {
+      endPasswordFlow();
+    });
+
+    function endPasswordFlow() {
+      passwordFlow.active = false;
+      passwordFlow.account = null;
+      passwordFlow.mode = null;
+      passwordArea.style.display = 'none';
+      passwordArea.setAttribute('aria-hidden', 'true');
+      accountButtons.style.display = 'flex';
+      avatarCircle.textContent = '';
+      loginHint.textContent = 'Hover an account to preview initial, click to sign in';
+      pwPromptText.textContent = '';
+    }
+
+    // Create password: validate and write hashed password to cloud then login
+    createPwBtn.addEventListener('click', async () => {
+      const p1 = (newPasswordInput.value || '').trim();
+      const p2 = (newPasswordRetype.value || '').trim();
+      if (!p1 || !p2) {
+        alert('Please enter and retype the new password.');
+        return;
+      }
+      if (p1 !== p2) {
+        alert('Passwords do not match.');
+        return;
+      }
+      const acct = passwordFlow.account;
+      try {
+        const hashed = await hashPassword(p1);
+        // write to passwords doc under map[acct] = hashed
+        const snap = await getDoc(passwordsDocRef);
+        const existingMap = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        existingMap[acct] = hashed;
+        await setDoc(passwordsDocRef, { map: existingMap }, { merge: true });
+        // login
+        finishLoginAs(acct);
+      } catch (err) {
+        alert('Failed to set password: ' + (err.message || err));
+      }
+    });
+
+    // Submit existing password: hash and compare
+    submitPwBtn.addEventListener('click', async () => {
+      const p = (passwordInput.value || '').trim();
+      if (!p) {
+        alert('Please enter your password.');
+        return;
+      }
+      const acct = passwordFlow.account;
+      try {
+        const hashed = await hashPassword(p);
+        const pwSnap = await getDoc(passwordsDocRef);
+        const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
+        const stored = map[acct] || null;
+        if (!stored) {
+          alert('No password stored for this account (it may have been removed). Please create one.');
+          // switch to create mode
+          passwordFlow.mode = 'create';
+          enterPw.style.display = 'none';
+          createPw.style.display = 'flex';
+          return;
+        }
+        if (hashed === stored) {
+          finishLoginAs(acct);
+        } else {
+          alert('Incorrect password. Try again.');
+          passwordInput.value = '';
+          passwordInput.focus();
+        }
+      } catch (err) {
+        alert('Failed to verify password: ' + (err.message || err));
+      }
+    });
+
+    // Helper to finish login and show main UI
+    function finishLoginAs(accountName) {
       currentUser = accountName;
       // hide overlay, show page
       loginOverlay.style.display = 'none';
@@ -561,8 +755,15 @@
         nameSelect.value = accountName;
       }
       nameSelect.focus();
-      // clear avatar when we move past login
+      // clear password flow UI state
+      passwordArea.style.display = 'none';
+      accountButtons.style.display = 'flex'; // keep consistent for next login
+      passwordFlow.active = false;
+      passwordFlow.account = null;
+      passwordFlow.mode = null;
       avatarCircle.textContent = '';
+      loginHint.textContent = 'Hover an account to preview initial, click to sign in';
+      pwPromptText.textContent = '';
     }
 
     // Make the How-To button hookup robust (ensure handlers are attached after elements exist)
