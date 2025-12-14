@@ -192,6 +192,62 @@
             padding: 4px;
         }
 
+        /* Login overlay (GDM3-like) */
+        #loginOverlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            background: rgba(0,0,0,0.55); /* keep background visible but dimmed */
+        }
+        .login-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            background: rgba(0,0,0,0.65);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 26px 28px;
+            border-radius: 12px;
+            min-width: 320px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+        }
+        .avatar {
+            width: 112px;
+            height: 112px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.06);
+        }
+        .login-title {
+            font-size: 18px;
+            color: #fff;
+            opacity: 0.95;
+        }
+        .user-button {
+            width: 260px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .user-button:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
         /* Responsive fallback */
         @media (max-width: 640px) {
             body { margin: 20px; max-width: 100%; }
@@ -199,10 +255,26 @@
             #howBtn { left: 8px; top: 8px; }
             .emoji-picker { right: 0; left: 0; width: auto; }
             .emoji-grid { grid-template-columns: repeat(6, 1fr); }
+            .login-card { min-width: 260px; padding: 18px; }
+            .user-button { width: 220px; }
         }
     </style>
 </head>
 <body>
+  <!-- LOGIN OVERLAY: shown first. Background remains visible beneath -->
+  <div id="loginOverlay" role="dialog" aria-modal="true" aria-label="Login">
+    <div class="login-card" role="presentation">
+      <div class="avatar" aria-hidden="true">A</div>
+      <div class="login-title">Select a user to sign in</div>
+
+      <!-- Administrator user button (press to continue) -->
+      <button id="adminBtn" class="user-button" type="button" aria-label="Sign in as Administrator">
+        <span style="font-weight:700;">Administrator</span>
+      </button>
+      <div style="font-size:0.85em; color:rgba(255,255,255,0.75);">Click the account to continue</div>
+    </div>
+  </div>
+
   <div class="page-inner">
     <!-- How To Use button at top-left -->
     <button id="howBtn" title="How To Use">How To Use</button>
@@ -316,8 +388,24 @@ Charlie"></textarea>
     const emojiGrid = document.getElementById('emojiGrid');
     const emojiRow = document.getElementById('emojiRow');
 
+    // LOGIN overlay refs + initial hide of page-inner
+    const loginOverlay = document.getElementById('loginOverlay');
+    const adminBtn = document.getElementById('adminBtn');
+    const pageInner = document.querySelector('.page-inner');
+    // hide the message-board UI until login
+    pageInner.style.display = 'none';
+
     // Make the How-To button hookup robust (ensure handlers are attached after elements exist)
     window.addEventListener('load', () => {
+      // LOGIN: When Administrator is pressed, hide overlay and show page content
+      adminBtn.addEventListener('click', () => {
+        loginOverlay.style.display = 'none';
+        pageInner.style.display = ''; // restore display
+        // focus first control for convenience
+        const select = document.getElementById('nameSelect');
+        if (select) select.focus();
+      });
+
       howBtn.addEventListener('click', () => {
         howBackdrop.style.display = 'flex';
       });
@@ -626,4 +714,3 @@ Charlie"></textarea>
 
 </body>
 </html>
-
