@@ -108,10 +108,10 @@
       position: relative;
     }
 
-    /* message bubble */
+    /* message bubble (oval) — made slightly larger so edit UI fits) */
     .message {
       border-radius: 999px;
-      padding: 10px 16px;
+      padding: 14px 20px; /* increased from smaller padding */
       display: inline-block;
       align-self: flex-start; /* left-aligned */
       max-width: 100%;
@@ -157,7 +157,7 @@
       background: rgba(220,20,60,0.95);
       color: #fff;
     }
-    /* EDIT button: changed to blue per your request */
+    /* EDIT button: blue */
     .icon-btn.pencil {
       background: rgba(30,144,255,0.95); /* DodgerBlue */
       color: #fff;
@@ -278,8 +278,39 @@
     .emoji-btn:hover { background: rgba(255,255,255,0.06); }
 
     /* inline edit UI inside message bubble */
-    .edit-area { display:flex; gap:6px; align-items:center; }
-    .edit-area textarea { height:56px; min-width:200px; resize:vertical; color:#000; background:#fff; border-radius:8px; padding:8px; }
+    .edit-area {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      width:100%;
+      box-sizing:border-box;
+    }
+    .edit-area textarea {
+      height: 88px;               /* made taller */
+      min-width: 260px;           /* made wider */
+      max-width: 420px;
+      resize: vertical;
+      color:#000;
+      background:#fff;
+      border-radius:8px;
+      padding:8px;
+      box-sizing: border-box;
+    }
+
+    /* style Save/Cancel inside edit-area: black bg; hover brightness change still applies */
+    .edit-area .icon-btn {
+      background: #000;
+      color: #fff;
+      width: auto;
+      padding: 8px 12px;
+      height: auto;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .edit-area .icon-btn:hover { filter: brightness(1.12); }
+
+    /* move cancel to right */
+    .edit-area .cancel-btn { margin-left: auto; }
 
     /* Change Password modal */
     .pw-backdrop {
@@ -554,6 +585,9 @@
     const accountsDocRef = doc(db, 'meta', 'accounts');
     const passwordsDocRef = doc(db, 'meta', 'passwords');
     const ADMIN_NAME = 'Administrator';
+
+    // remember last messages so we can re-render after login
+    let lastMessages = [];
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -887,6 +921,9 @@
       changePwBtn.style.display = 'inline-block';
 
       updateClearButtonState();
+
+      // RE-RENDER messages immediately so action buttons update to match currentUser
+      renderMessages(lastMessages);
     }
 
     // SIGN OUT behavior
@@ -907,6 +944,9 @@
         nameSelect.disabled = false;
       }
       updateClearButtonState();
+
+      // re-render messages so action buttons disappear
+      renderMessages(lastMessages);
     }
 
     // wire up signOut button
@@ -977,6 +1017,8 @@
           time: d.time || null
         });
       });
+      // store last messages and render
+      lastMessages = msgs;
       renderMessages(msgs);
     }, err => {
       console.error("Realtime messages error:", err);
@@ -1084,19 +1126,18 @@
 
       const ta = document.createElement('textarea');
       ta.value = originalText;
-      ta.style.minWidth = '200px';
+      ta.style.minWidth = '260px';
       ta.style.maxWidth = '420px';
 
       const saveBtn = document.createElement('button');
       saveBtn.textContent = 'Save';
-      saveBtn.className = 'icon-btn';
-      saveBtn.style.background = 'rgba(0,150,0,0.9)';
-      saveBtn.style.color = '#fff';
+      saveBtn.className = 'icon-btn save-btn';
+      // removed inline green style — now styled via CSS in .edit-area .icon-btn
 
       const cancelBtn = document.createElement('button');
       cancelBtn.textContent = 'Cancel';
-      cancelBtn.className = 'icon-btn';
-      cancelBtn.style.background = 'rgba(255,255,255,0.06)';
+      cancelBtn.className = 'icon-btn cancel-btn';
+      // removed inline pale style — now styled via CSS in .edit-area .icon-btn
 
       editWrap.appendChild(ta);
       editWrap.appendChild(saveBtn);
@@ -1235,7 +1276,7 @@
       } else {
         clearBtn.style.display = 'none';  // hide for everyone else
         clearBtn.disabled = true;
-        clearBtn.title = 'Only Administrator may clear history';
+        clearBtn.title = ''; // keep consistent
       }
     }
 
