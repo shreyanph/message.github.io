@@ -27,13 +27,13 @@
       box-sizing: border-box;
     }
 
-    /* How To Use button (moved to fixed left, same Y as Sign Out) */
+    /* How To Use button (moved to fixed left, same Y as Sign Out) - ORANGE */
     #howBtn {
       position: fixed;
       top: 12px;
       left: 12px;
       z-index: 5000;
-      background: rgba(0,0,0,0.7);
+      background: rgba(255,165,0,0.95); /* orange */
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
       border-radius: 6px;
@@ -56,13 +56,13 @@
       display: none; /* shown only when signed in */
     }
 
-    /* Change Password button (placed left of Sign Out) */
+    /* Change Password button (placed left of Sign Out) - BLUE */
     #changePwBtn {
       position: fixed;
       top: 12px;
       right: 96px; /* sits just left of sign out */
       z-index: 5001;
-      background: rgba(0,0,0,0.7);
+      background: rgba(30,144,255,0.95); /* blue */
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
       border-radius: 6px;
@@ -250,18 +250,53 @@
     }
     #accountsList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
     #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
-    .remove-account { background: rgba(255,255,255,0.06); border: none; color: #fff; padding: 4px 8px; border-radius:6px; cursor:pointer; }
-    .remove-account.disabled { opacity: 0.45; cursor: not-allowed; background: rgba(255,255,255,0.02); }
 
-    /* style for admin "Change Password" small button in accounts list */
+    /* Remove button in admin panel: red background */
+    .remove-account {
+      background: rgba(220,20,60,0.95);
+      border: none;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+    .remove-account.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: rgba(255,255,255,0.02);
+      color: #fff;
+    }
+
+    /* style for admin "Change Password" small button in accounts list (kept blue) */
     .change-account-pw {
       background: rgba(30,144,255,0.95);
       border: none;
       color: #fff;
-      padding: 4px 8px;
+      padding: 6px 10px;
       border-radius: 6px;
       cursor: pointer;
       margin-right: 6px;
+    }
+
+    /* Add button should be green */
+    #addAccountBtn {
+      background: rgba(0,180,0,0.95); /* green */
+      border: none;
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Clear message history button should be red */
+    #clearBtn {
+      background: rgba(220,20,60,0.95);
+      border: none;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 8px;
     }
 
     /* Emoji row: ensure textarea and button are in same row */
@@ -484,15 +519,15 @@
     <button id="sendBtn">Send</button>
 
     <h2>Message History</h2>
-    <!-- This button is present in the DOM but will be hidden for non-admins by JS -->
-    <button id="clearBtn" title="Only Administrator may clear history">Clear Message History (cloud)</button>
+    <!-- clear label updated (no "(cloud)") -->
+    <button id="clearBtn" title="Only Administrator may clear history">Clear Message History</button>
 
     <div id="messages" aria-live="polite"></div>
   </div>
 
   <!-- Sign Out button (top-right) -->
   <button id="signOutBtn" title="Sign out">Sign Out</button>
-  <!-- Change Password button (left of Sign Out) -->
+  <!-- Change Password button (left of Sign Out) - blue -->
   <button id="changePwBtn" title="Change your password">Change Password</button>
 
   <!-- Change password modal -->
@@ -503,6 +538,7 @@
         <button id="closePwModal" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>
       </div>
       <div id="pwMsg" style="font-size:0.9em;color:rgba(255,255,255,0.85);">Enter your current password and a new password.</div>
+      <!-- current password input (may be hidden when admin changes someone else) -->
       <input id="cpCurrent" type="password" placeholder="Current password (leave blank if none stored)" />
       <input id="cpNew" type="password" placeholder="New password" />
       <input id="cpNewRetype" type="password" placeholder="Retype new password" />
@@ -679,26 +715,28 @@
       // admin panel list
       accountsList.innerHTML = "";
       if (Array.isArray(list)) {
+        // ensure Administrator first
         const ordered = list.includes(ADMIN_NAME) ? [ADMIN_NAME, ...list.filter(n => n !== ADMIN_NAME)] : list;
         ordered.forEach(name => {
           const li = document.createElement('li');
-          const leftWrap = document.createElement('div');
-          leftWrap.style.display = 'flex';
-          leftWrap.style.alignItems = 'center';
-          leftWrap.style.gap = '8px';
 
+          // left: label
           const label = document.createElement('span');
           label.textContent = name;
-          leftWrap.appendChild(label);
 
-          // If name is not Administrator, add Change Password + Remove; if Administrator only Remove disabled
+          // right: actions (change password + remove)
+          const actionsRight = document.createElement('div');
+          actionsRight.style.display = 'flex';
+          actionsRight.style.gap = '8px';
+          actionsRight.style.alignItems = 'center';
+
           if (name === ADMIN_NAME) {
+            // Remove disabled (Administrator cannot be removed)
             const rm = document.createElement('button');
             rm.className = 'remove-account disabled';
             rm.textContent = 'Remove';
             rm.disabled = true;
-            li.appendChild(leftWrap);
-            li.appendChild(rm);
+            actionsRight.appendChild(rm);
           } else {
             // Change Password (admin-only action on accounts list)
             const changeBtn = document.createElement('button');
@@ -711,14 +749,17 @@
                 alert('Only Administrator may change other account passwords.');
                 return;
               }
+              // Target is the listed account; admin flow: do not require current password
               pwChangeTarget = name;
               cpCurrent.value = '';
               cpNew.value = '';
               cpNewRetype.value = '';
+              // Hide current-password input because admin is changing someone else
+              cpCurrent.style.display = 'none';
               pwMsg.textContent = `Set a new password for ${name} (Administrator).`;
               pwBackdrop.style.display = 'flex';
             });
-            leftWrap.appendChild(changeBtn);
+            actionsRight.appendChild(changeBtn);
 
             // Remove button
             const rm = document.createElement('button');
@@ -747,9 +788,12 @@
                 alert('Failed to remove account: ' + err.message);
               }
             });
-            li.appendChild(leftWrap);
-            li.appendChild(rm);
+            actionsRight.appendChild(rm);
           }
+
+          // assemble li: label left, actions right
+          li.appendChild(label);
+          li.appendChild(actionsRight);
           accountsList.appendChild(li);
         });
       }
@@ -1076,6 +1120,8 @@
       cpCurrent.value = '';
       cpNew.value = '';
       cpNewRetype.value = '';
+      // When a user changes their own pw (top-right), show current-password input
+      cpCurrent.style.display = '';
       pwMsg.textContent = 'Enter your current password and a new password.';
       pwBackdrop.style.display = 'flex';
     });
@@ -1117,6 +1163,8 @@
         alert('Password updated.');
         pwBackdrop.style.display = 'none';
         pwChangeTarget = null;
+        // ensure cpCurrent is visible next time someone opens modal for self
+        cpCurrent.style.display = '';
       } catch (err) {
         alert('Failed to change password: ' + (err.message || err));
       }
@@ -1406,13 +1454,13 @@
       }
     }
 
+    // removed confirm dialog as requested — only admin sees button
     clearBtn.addEventListener('click', async () => {
       if (currentUser !== ADMIN_NAME) {
         alert('Only Administrator may clear message history.');
         updateClearButtonState();
         return;
       }
-      if (!confirm("Delete all messages from cloud? This cannot be undone.")) return;
       try {
         const snap = await getDocs(collection(db, 'messages'));
         const deletes = [];
@@ -1469,6 +1517,8 @@
       clearBtn.style.display = 'none';
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
+      // ensure cpCurrent visible by default
+      cpCurrent.style.display = '';
       updateClearButtonState();
     })();
   </script>
