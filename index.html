@@ -268,7 +268,7 @@
     #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
     #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
 
-    /* Admin panel (centered) */
+    /* Admin panel (centered) -- updated to animate open/close (unfold) */
     #adminPanel {
       margin: 8px auto 16px auto;
       z-index: 500;
@@ -279,8 +279,27 @@
       width: 100%;
       max-width: 520px;
       color: #fff;
-      display: none;
+
+      /* folding animation base */
+      overflow: hidden;
+      max-height: 0;                   /* collapsed */
+      opacity: 0;
+      transform-origin: top center;
+      transform: scaleY(0.98);
+      transition:
+        max-height 520ms cubic-bezier(.2,.9,.2,1),
+        opacity 420ms ease,
+        transform 420ms cubic-bezier(.2,.9,.2,1);
+      pointer-events: none;
     }
+    /* when open, allow interactions and expand */
+    #adminPanel.panel-open {
+      max-height: 520px;               /* large enough for content (adjust if needed) */
+      opacity: 1;
+      transform: scaleY(1);
+      pointer-events: auto;
+    }
+
     #accountsList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
     #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
 
@@ -1158,10 +1177,10 @@
       currentUser = accountName;
       pageInner.style.display = '';
       if (currentUser === ADMIN_NAME) {
-        adminPanel.style.display = 'block';
+        showAdminPanel();           // show with animation
         adminPanel.setAttribute('aria-hidden', 'false');
       } else {
-        adminPanel.style.display = 'none';
+        hideAdminPanel();           // ensure hid when not admin
         adminPanel.setAttribute('aria-hidden', 'true');
       }
 
@@ -1223,6 +1242,35 @@
       renderMessages(lastMessages);
     }
 
+    // Helper: show/hide admin panel with CSS class so it unfolds/folds
+    function showAdminPanel() {
+      // if already visible, do nothing
+      if (adminPanel.classList.contains('panel-open')) return;
+      adminPanel.style.display = 'block';     // ensure it's in flow so transitions apply
+      // small timeout to allow layout then add class
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          adminPanel.classList.add('panel-open');
+        });
+      });
+    }
+    function hideAdminPanel() {
+      if (!adminPanel.classList.contains('panel-open')) {
+        adminPanel.style.display = 'none';
+        return;
+      }
+      // remove class to collapse
+      adminPanel.classList.remove('panel-open');
+      // after transition, set display none to completely hide
+      const t = 520; // matches CSS max-height transition duration
+      setTimeout(() => {
+        // only hide if class still not present (i.e., no re-open meanwhile)
+        if (!adminPanel.classList.contains('panel-open')) {
+          adminPanel.style.display = 'none';
+        }
+      }, t + 60);
+    }
+
     // SIGN OUT behavior
     function signOut() {
       currentUser = null;
@@ -1230,6 +1278,9 @@
       pageInner.classList.add('fade-out');
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
+
+      // fold admin panel when signing out
+      hideAdminPanel();
 
       setTimeout(() => {
         pageInner.style.display = 'none';
@@ -1658,6 +1709,8 @@
         loginCard.classList.add('scale-in');
       });
       updateClearButtonState();
+      // ensure admin panel starts hidden (in case CSS transitions toggle)
+      adminPanel.style.display = 'none';
     })();
   </script>
 </body>
