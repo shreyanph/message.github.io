@@ -119,12 +119,12 @@
       position: relative;
     }
 
-    /* message bubble (oval) — made slightly larger so edit UI fits) */
+    /* message bubble (oval) */
     .message {
       border-radius: 999px;
-      padding: 14px 20px; /* increased from smaller padding */
+      padding: 14px 20px;
       display: inline-block;
-      align-self: flex-start; /* left-aligned */
+      align-self: flex-start;
       max-width: 100%;
       color: #ffffff;
       line-height: 1.25;
@@ -199,7 +199,7 @@
       font-size: 0.95em;
     }
 
-    /* Login overlay (restored darker overlay as requested) */
+    /* Login overlay */
     #loginOverlay {
       position: fixed;
       left: 0;
@@ -210,54 +210,30 @@
       align-items: center;
       justify-content: center;
       z-index: 3000;
-      background: rgba(0,0,0,0.55); /* REVERTED to darker overlay */
+      background: rgba(0,0,0,0.55);
     }
 
-    /*
-      The login-card now animates with scaleY from the middle.
-      transform-origin:center makes top go up and bottom go down.
-      Duration set to 3s (user requested).
-    */
     .login-card {
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center; /* contents centered initially */
+      justify-content: center;
       gap: 18px;
       background: rgba(0,0,0,0.65);
       border: 1px solid rgba(255,255,255,0.12);
       padding: 26px 28px;
       border-radius: 12px;
       min-width: 320px;
-      min-height: 460px; /* big for account selection */
+      min-height: 460px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.7);
       overflow: hidden;
-      transform: scaleY(0);               /* start collapsed in Y */
-      transform-origin: center center;    /* expand from center (top up, bottom down) */
-      opacity: 0;
+      transform-origin: center center;
+      opacity: 1;
       transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease;
     }
 
-    /* scale in (full open) after we add this class */
-    .login-card.scale-in {
-      transform: scaleY(1);
-      opacity: 1;
-    }
-
-    /* condense class applied when user clicks an account: reduce wasted vertical space */
-    .login-card.condense {
-      min-height: 280px;            /* much smaller height */
-      padding-top: 28px;
-      padding-bottom: 20px;
-      justify-content: flex-start;  /* move content to top so password area sits higher */
-      gap: 12px;
-      transition: transform 300ms ease, min-height 300ms ease, padding 300ms ease;
-    }
-    /* reduce avatar size when condensed */
-    .login-card.condense .avatar { width: 84px; height: 84px; font-size: 36px; }
-
-    /* splitting overlays (top+bottom) — start covering content, animate out */
+    /* split overlays (keeps existing center-out animation intact) */
     .split-top, .split-bottom {
       position: absolute;
       left: 0;
@@ -269,8 +245,6 @@
     }
     .split-top { top: 0; height: 50%; transform: translateY(0); }
     .split-bottom { bottom: 0; height: 50%; transform: translateY(0); }
-
-    /* when open, move them away from center (3s to match) */
     .login-card.split-open .split-top { transform: translateY(-120%); }
     .login-card.split-open .split-bottom { transform: translateY(120%); }
 
@@ -289,28 +263,10 @@
     }
     .account-btn:hover { background: rgba(255,255,255,0.06); }
 
-    /* fade helpers for account list / password area
-       Use visibility to avoid layout reflow (display none -> display block was causing jumping) */
-    #accountButtons { transition: opacity 300ms ease, transform 300ms ease; }
-    #accountButtons.fade-out { opacity: 0; transform: translateY(-6px); visibility: hidden; }
-    #accountButtons.fade-in  { opacity: 1; transform: translateY(0); visibility: visible; }
-
-    /* Password area: will fade/slide into view; positioned in normal flow so it appears at correct place */
-    #passwordArea {
-      display: none;
-      opacity: 0;
-      transform: translateY(0);
-      transition: opacity 300ms ease, transform 300ms ease;
-      width:100%;
-      gap:8px;
-      flex-direction:column;
-      align-items:stretch;
-    }
-    #passwordArea.show {
-      display: flex;
-      opacity: 1;
-      transform: translateY(0);
-    }
+    /* ---------- REVERTED PASSWORD AREA CSS (from the snippet you provided) ---------- */
+    /* Password area: simple, no show/fade classes */
+    #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
+    #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
 
     /* Admin panel (centered) */
     #adminPanel {
@@ -417,8 +373,8 @@
       box-sizing:border-box;
     }
     .edit-area textarea {
-      height: 88px;               /* made taller */
-      min-width: 260px;           /* made wider */
+      height: 88px;
+      min-width: 260px;
       max-width: 420px;
       resize: vertical;
       color:#000;
@@ -428,7 +384,6 @@
       box-sizing: border-box;
     }
 
-    /* style Save/Cancel inside edit-area: black bg; hover brightness change still applies */
     .edit-area .icon-btn {
       background: #000;
       color: #fff;
@@ -439,8 +394,6 @@
       font-size: 14px;
     }
     .edit-area .icon-btn:hover { filter: brightness(1.12); }
-
-    /* move cancel to right */
     .edit-area .cancel-btn { margin-left: auto; }
 
     /* Change Password modal */
@@ -466,9 +419,6 @@
       gap:8px;
     }
     .pw-modal input { width:100%; padding:8px; box-sizing:border-box; color:#000; background:#fff; border-radius:6px; border: none; }
-
-    /* Password area */
-    #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
 
     /* small inline password error text */
     .pw-error {
@@ -513,8 +463,8 @@
       align-items: center;
       justify-content: center;
       z-index: 4000;
-      pointer-events: none; /* no interaction while booting */
-      background: transparent; /* keep same background image visible */
+      pointer-events: none;
+      background: transparent;
     }
     #bootBox {
       display: flex;
@@ -530,7 +480,7 @@
     }
     #bootBox.show { opacity: 1; transform: scale(1); }
     #bootLogoWrap {
-      width: 320px;   /* LOGO MADE LARGER per request earlier */
+      width: 320px;
       height: 320px;
       border-radius: 50%;
       display:flex;
@@ -539,13 +489,12 @@
       background: rgba(255,255,255,0.04);
     }
     #bootLogo {
-      width: 300px;   /* much bigger logo only */
+      width: 300px;
       height: 300px;
       object-fit: contain;
       display:block;
-      border-radius: 12px; /* keep rounded corners */
+      border-radius: 12px;
     }
-    /* spinner unchanged (per request earlier) */
     .boot-spinner {
       width: 96px;
       height: 96px;
@@ -557,7 +506,6 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* small fade helper for loginOverlay removal */
     .hidden { display: none !important; }
 
     @media (max-width: 640px) {
@@ -566,10 +514,6 @@
       .account-btn { width: 220px; }
       #adminPanel { width: calc(100% - 32px); }
       .emoji-grid { grid-template-columns: repeat(6, 1fr); }
-      /* keep buttons visible on small screens */
-      #howBtn { left: 8px; top: 12px; }
-      #signOutBtn { right: 8px; top: 12px; }
-      #changePwBtn { right: 84px; top: 12px; }
       #bootLogoWrap { width: 240px; height: 240px; }
       #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
@@ -589,14 +533,14 @@
 
       <div id="accountButtons" style="display:flex; flex-direction:column; gap:8px; align-items:center; width:100%;"></div>
 
-      <!-- Password prompt -->
+      <!-- Password prompt (REVERTED to simpler version) -->
       <div id="passwordArea" aria-hidden="true">
         <div id="pwPromptText" style="margin-bottom:4px; color:rgba(255,255,255,0.9); font-size:0.95em;"></div>
 
         <!-- Inline error appears here for incorrect passwords -->
         <div id="pwErr" class="pw-error" aria-live="polite"></div>
 
-        <div id="enterPw" style="display:flex; gap:8px; flex-direction:column;">
+        <div id="enterPw" style="display:none; gap:8px; flex-direction:column;">
           <input id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" />
           <div style="display:flex; gap:8px;">
             <button id="submitPwBtn">Submit</button>
@@ -625,7 +569,6 @@
   <div id="bootOverlay" aria-hidden="true">
     <div id="bootBox" role="presentation" aria-hidden="true">
       <div id="bootLogoWrap" aria-hidden="true">
-        <!-- Keep exactly the same logo file you uploaded next to index.html. If name differs, update src -->
         <img id="bootLogo" src="Message%20Board.png" alt="Message Board Logo" />
       </div>
       <div class="boot-spinner" role="status" aria-label="Loading"></div>
@@ -668,7 +611,6 @@
     <button id="sendBtn">Send</button>
 
     <h2>Message History</h2>
-    <!-- clear label updated (no "(cloud)") -->
     <button id="clearBtn" title="Only Administrator may clear history">Clear Message History</button>
 
     <div id="messages" aria-live="polite"></div>
@@ -687,7 +629,6 @@
         <button id="closePwModal" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>
       </div>
       <div id="pwMsg" style="font-size:0.9em;color:rgba(255,255,255,0.85);">Enter your current password and a new password.</div>
-      <!-- current password input (may be hidden when admin changes someone else) -->
       <input id="cpCurrent" type="password" placeholder="Current password (leave blank if none stored)" />
       <input id="cpNew" type="password" placeholder="New password" />
       <input id="cpNewRetype" type="password" placeholder="Retype new password" />
@@ -1040,31 +981,17 @@
     let currentUser = null;
     const passwordFlow = { active: false, account: null, mode: null };
 
+    // ---------- REVERTED startPasswordFlowFor (simple swap, no transition) ----------
     async function startPasswordFlowFor(accountName) {
       passwordFlow.active = true;
       passwordFlow.account = accountName;
       passwordFlow.mode = null;
 
-      // CONDENSE the card so the password area moves up and wasted center space is removed.
-      loginCard.classList.add('condense');
-
-      // Fade account list out (visibility hidden to avoid reflow)
-      accountButtons.classList.add('fade-out');
-      accountButtons.classList.remove('fade-in');
-      setTimeout(() => {
-        accountButtons.style.visibility = 'hidden';
-      }, 320);
-
-      // prepare password area, then animate it in (fade)
-      passwordArea.classList.remove('show');
+      // immediate swap: hide accounts list and show password area (no fade/condense)
+      accountButtons.style.display = 'none';
       passwordArea.style.display = 'flex';
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          passwordArea.classList.add('show');
-        });
-      });
-
       passwordArea.setAttribute('aria-hidden', 'false');
+
       loginHint.textContent = '';
       avatarCircle.textContent = (accountName && typeof accountName === 'string') ? accountName.trim().charAt(0).toUpperCase() : '';
       pwPromptText.textContent = `Sign in as ${accountName}`;
@@ -1098,37 +1025,15 @@
       }
     }
 
+    // ---------- REVERTED endPasswordFlow ----------
     function endPasswordFlow() {
       passwordFlow.active = false;
       passwordFlow.account = null;
       passwordFlow.mode = null;
 
-      // Remove condensed layout so card returns to full (accounts) layout
-      loginCard.classList.remove('condense');
-
-      // fade password area out and restore account list with split animation
-      passwordArea.classList.remove('show');
-      setTimeout(() => {
-        passwordArea.style.display = 'none';
-      }, 300);
-
-      // show account buttons (fade in)
-      accountButtons.style.visibility = 'visible';
-      accountButtons.classList.remove('fade-out');
-      accountButtons.classList.add('fade-in');
-
-      // play split-open reveal when showing accounts
-      splitTop.style.display = '';
-      splitBottom.style.display = '';
-      void loginCard.offsetWidth;
-      loginCard.classList.add('split-open');
-      setTimeout(() => {
-        splitTop.style.display = 'none';
-        splitBottom.style.display = 'none';
-        loginCard.classList.remove('split-open');
-      }, 3000); // 3s to match open animation
-
+      passwordArea.style.display = 'none';
       passwordArea.setAttribute('aria-hidden', 'true');
+      accountButtons.style.display = 'flex';
       avatarCircle.textContent = '';
       loginHint.textContent = 'Click/Press your account to sign in';
       pwPromptText.textContent = '';
@@ -1154,18 +1059,17 @@
         const existingMap = (snap.exists() && snap.data().map) ? snap.data().map : {};
         existingMap[acct] = hashed;
         await setDoc(passwordsDocRef, { map: existingMap }, { merge: true });
-        // start boot sequence (instead of finish immediately)
+        // keep boot sequence behavior (startBootSequence) as previously present in the advanced version
         startBootSequence(acct);
       } catch (err) {
         alert('Failed to set password: ' + (err.message || err));
       }
     });
 
-    // === UPDATED: submit password handler shows inline error, not an alert popup ===
+    // submit handler (keeps inline error behavior)
     submitPwBtn.addEventListener('click', async () => {
       const p = (passwordInput.value || '').trim();
       if (!p) {
-        // keep the small inline message for missing pw as well
         pwErr.textContent = 'Please enter your password';
         pwErr.style.display = 'block';
         passwordInput.classList.add('input-error');
@@ -1179,21 +1083,18 @@
         const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
         const stored = map[acct] || null;
         if (!stored) {
-          // no stored password -> instruct to create instead
-          alert('No password stored for this account. Please create one.');
+          // no stored password -> instruct to create instead (simple behavior)
           passwordFlow.mode = 'create';
           enterPw.style.display = 'none';
           createPw.style.display = 'flex';
           return;
         }
         if (hashed === stored) {
-          // success: clear inline error and start boot sequence (instead of immediately finishing)
           pwErr.style.display = 'none';
           pwErr.textContent = '';
           passwordInput.classList.remove('input-error');
           startBootSequence(acct);
         } else {
-          // WRONG PASSWORD: inline message and red border — no alert/pop-up
           pwErr.textContent = `Incorrect password for ${acct}`;
           pwErr.style.display = 'block';
           passwordInput.classList.add('input-error');
@@ -1201,7 +1102,6 @@
           return;
         }
       } catch (err) {
-        // fallback alert for unexpected error
         alert('Failed to verify password: ' + (err.message || err));
       }
     });
@@ -1215,7 +1115,7 @@
       }
     });
 
-    // === NEW: submit password on Enter in lock screen ===
+    // submit on Enter
     passwordInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1223,18 +1123,16 @@
       }
     });
 
-    // START BOOT SEQUENCE
+    // START BOOT SEQUENCE (kept from previous advanced version)
     async function startBootSequence(accountName) {
-      // fade out login card a bit while keeping it visible
       loginCard.classList.add('fade-out');
 
       setTimeout(async () => {
         loginCard.style.visibility = 'hidden';
-        // show boot overlay and animate in the boot box
         bootOverlay.style.display = 'flex';
         requestAnimationFrame(() => bootBox.classList.add('show'));
 
-        // perform hidden setup in parallel (non-visible) — warm DB read
+        // hidden setup
         (async function hiddenSetup() {
           try {
             await getDocs(query(collection(db, 'messages'), orderBy('time', 'asc')));
@@ -1243,9 +1141,7 @@
           }
         })();
 
-        // keep boot visible for 3 seconds
         setTimeout(() => {
-          // fade out bootBox
           bootBox.classList.remove('show');
           setTimeout(() => {
             bootOverlay.style.display = 'none';
@@ -1253,8 +1149,6 @@
             finishLoginAs(accountName);
             loginCard.style.visibility = '';
             loginCard.classList.remove('fade-out');
-            // ensure card not condensed left behind
-            loginCard.classList.remove('condense');
           }, 450);
         }, 3000);
       }, 460);
@@ -1262,7 +1156,6 @@
 
     function finishLoginAs(accountName) {
       currentUser = accountName;
-      // show page
       pageInner.style.display = '';
       if (currentUser === ADMIN_NAME) {
         adminPanel.style.display = 'block';
@@ -1272,7 +1165,6 @@
         adminPanel.setAttribute('aria-hidden', 'true');
       }
 
-      // When Administrator logs in, automatically set the dropdown to Administrator
       if (currentUser === ADMIN_NAME) {
         let found = false;
         for (let i = 0; i < nameSelect.options.length; i++) {
@@ -1291,7 +1183,6 @@
         }
         nameSelect.disabled = false;
       } else {
-        // Non-admins: lock send identity to currentUser
         let found = false;
         for (let i = 0; i < nameSelect.options.length; i++) {
           if (nameSelect.options[i].value === accountName) {
@@ -1312,11 +1203,8 @@
 
       messageInput.focus();
 
-      // clear password flow UI state
-      passwordArea.classList.remove('show');
+      // restore password UI to hidden and account list visible
       passwordArea.style.display = 'none';
-      accountButtons.classList.remove('fade-out');
-      accountButtons.style.visibility = 'visible';
       accountButtons.style.display = 'flex';
       passwordFlow.active = false;
       passwordFlow.account = null;
@@ -1331,7 +1219,7 @@
 
       updateClearButtonState();
 
-      // RE-RENDER messages immediately so action buttons update to match currentUser
+      // re-render messages so action buttons update to match currentUser
       renderMessages(lastMessages);
     }
 
@@ -1339,10 +1227,7 @@
     function signOut() {
       currentUser = null;
 
-      // fade the main UI out, then show lock screen (loginOverlay)
       pageInner.classList.add('fade-out');
-
-      // hide sign out and change pw button right away (so user can't re-click)
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
 
@@ -1350,19 +1235,14 @@
         pageInner.style.display = 'none';
         pageInner.classList.remove('fade-out');
 
-        // show login overlay and animate card in
         loginOverlay.style.display = 'flex';
-        // ensure card animates (scale in)
         loginCard.style.visibility = '';
-        // start scale-in
         loginCard.classList.add('scale-in');
 
-        // ensure accountButtons visible and animate
         accountButtons.style.visibility = 'visible';
         accountButtons.classList.remove('fade-out');
         accountButtons.classList.add('fade-in');
 
-        // play split-open reveal when showing accounts
         splitTop.style.display = '';
         splitBottom.style.display = '';
         void loginCard.offsetWidth;
@@ -1373,16 +1253,12 @@
           loginCard.classList.remove('split-open');
         }, 3000);
 
-        // reset password area hidden
-        passwordArea.classList.remove('show');
         passwordArea.style.display = 'none';
 
         avatarCircle.textContent = '';
-        // update login hint to the requested text
         loginHint.textContent = 'Click/Press your account to sign in';
         pwPromptText.textContent = '';
 
-        // re-render messages so action buttons disappear
         renderMessages(lastMessages);
       }, 420);
     }
@@ -1399,12 +1275,10 @@
         alert('No user signed in.');
         return;
       }
-      // target is current user
       pwChangeTarget = currentUser;
       cpCurrent.value = '';
       cpNew.value = '';
       cpNewRetype.value = '';
-      // When a user changes their own pw (top-right), show current-password input
       cpCurrent.style.display = '';
       pwMsg.textContent = 'Enter your current password and a new password.';
       pwBackdrop.style.display = 'flex';
@@ -1416,7 +1290,6 @@
     cpSaveBtn.addEventListener('click', async () => {
       if (!currentUser) { alert('No user signed in.'); return; }
       const target = pwChangeTarget || currentUser;
-      // If trying to change someone else's password and not admin — disallow
       if (target !== currentUser && currentUser !== ADMIN_NAME) {
         alert('Only Administrator may change other account passwords.');
         return;
@@ -1433,21 +1306,18 @@
         const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
         const stored = map[target] || null;
 
-        // If target is the current user and a stored password exists, require old password match
         if (target === currentUser && stored) {
           if (!oldp) { alert('Enter current password.'); return; }
           const oldHash = await hashPassword(oldp);
           if (oldHash !== stored) { alert('Current password incorrect.'); return; }
         }
 
-        // Admin changing another user's password does NOT require their old password
         const newHash = await hashPassword(newp);
         map[target] = newHash;
         await setDoc(passwordsDocRef, { map }, { merge: true });
         alert('Password updated.');
         pwBackdrop.style.display = 'none';
         pwChangeTarget = null;
-        // ensure cpCurrent is visible next time someone opens modal for self
         cpCurrent.style.display = '';
       } catch (err) {
         alert('Failed to change password: ' + (err.message || err));
@@ -1469,7 +1339,6 @@
           time: d.time || null
         });
       });
-      // store last messages and render
       lastMessages = msgs;
       renderMessages(msgs);
     }, err => {
@@ -1480,7 +1349,6 @@
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      // top timestamp (labels first block)
       const topTime = formatTimestamp(messages[0].time);
       messagesDiv.appendChild(createTimestampRow(topTime));
 
@@ -1489,11 +1357,9 @@
         const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
         const text = (m.text && String(m.text)) ? m.text : '';
 
-        // wrapper row (message + actions)
         const row = document.createElement('div');
         row.className = 'message-row';
 
-        // wrapper bubble
         const div = document.createElement('div');
         div.className = 'message';
         try { div.style.background = colorForName(who); } catch (e) { div.style.background = 'rgba(0,0,0,0.45)'; }
@@ -1509,22 +1375,18 @@
         div.appendChild(nameSpan);
         div.appendChild(contentSpan);
 
-        // actions container (empty unless allowed)
         const actions = document.createElement('div');
         actions.className = 'actions';
 
-        // determine permission at render time (also rechecked at click)
         const canAct = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
 
         if (canAct) {
-          // Trash button
           const trash = document.createElement('button');
           trash.className = 'icon-btn trash';
           trash.title = 'Delete message';
           trash.innerHTML = '🗑';
           trash.addEventListener('click', async (ev) => {
             ev.stopPropagation();
-            // re-check permission at click-time to prevent race/edge cases
             const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
             if (!allowedNow) { alert('Not allowed to delete this message.'); return; }
             try {
@@ -1535,14 +1397,12 @@
           });
           actions.appendChild(trash);
 
-          // Edit button
           const edit = document.createElement('button');
           edit.className = 'icon-btn pencil';
           edit.title = 'Edit message';
           edit.innerHTML = '✏';
           edit.addEventListener('click', (ev) => {
             ev.stopPropagation();
-            // re-check permission
             const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
             if (!allowedNow) { alert('Not allowed to edit this message.'); return; }
             startEdit(row, div, contentSpan, m);
@@ -1560,19 +1420,16 @@
         }
       }
 
-      // Scroll to bottom
       if (messagesDiv.lastElementChild) {
         messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
     }
 
-    // start inline edit for a message row
+    // start inline edit for a message row (unchanged)
     function startEdit(row, messageDiv, contentSpan, m) {
-      // prevent multiple edit areas
       if (row.querySelector('.edit-area')) return;
 
       const originalText = m.text || '';
-      // create edit container
       const editWrap = document.createElement('div');
       editWrap.className = 'edit-area';
 
@@ -1593,14 +1450,12 @@
       editWrap.appendChild(saveBtn);
       editWrap.appendChild(cancelBtn);
 
-      // hide the original contentSpan and append edit area after nameSpan
       contentSpan.style.display = 'none';
       messageDiv.appendChild(editWrap);
 
       ta.focus();
       ta.selectionStart = ta.value.length;
 
-      // allow Enter (without Shift) to save the edit
       ta.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
@@ -1610,7 +1465,6 @@
 
       cancelBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        // remove edit UI and restore
         editWrap.remove();
         contentSpan.style.display = '';
       });
@@ -1618,14 +1472,11 @@
       saveBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const newText = (ta.value || '').trim();
-        // re-check permission before saving
         const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === m.name);
         if (!allowedNow) { alert('Not allowed to edit this message.'); editWrap.remove(); contentSpan.style.display = ''; return; }
 
         try {
-          // update message text (merge)
           await setDoc(doc(db, 'messages', m.id), { text: newText }, { merge: true });
-          // editWrap will be removed on snapshot update; but clean up now:
           editWrap.remove();
           contentSpan.textContent = ' ' + newText;
           contentSpan.style.display = '';
@@ -1725,7 +1576,7 @@
       }
     }
 
-    // clear button state & handler (admin only). Now hidden for non-admins.
+    // clear button state & handler (admin only).
     function updateClearButtonState() {
       if (currentUser === ADMIN_NAME) {
         clearBtn.style.display = '';      // visible
@@ -1734,11 +1585,10 @@
       } else {
         clearBtn.style.display = 'none';  // hide for everyone else
         clearBtn.disabled = true;
-        clearBtn.title = ''; // keep consistent
+        clearBtn.title = '';
       }
     }
 
-    // removed confirm dialog as requested — only admin sees button
     clearBtn.addEventListener('click', async () => {
       if (currentUser !== ADMIN_NAME) {
         alert('Only Administrator may clear message history.');
@@ -1797,24 +1647,16 @@
 
     // init
     (function init() {
-      // ensure clear and sign out hidden until login (explicit)
       clearBtn.style.display = 'none';
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
-      // ensure cpCurrent visible by default
       cpCurrent.style.display = '';
-      // ensure account buttons start visible
       accountButtons.classList.add('fade-in');
-
-      // make sure split overlays start visible so first reveal works
       splitTop.style.display = '';
       splitBottom.style.display = '';
-
-      // play scale-in on the login card on first load (expand from middle over 3s)
       requestAnimationFrame(() => {
         loginCard.classList.add('scale-in');
       });
-
       updateClearButtonState();
     })();
   </script>
