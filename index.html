@@ -217,19 +217,28 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center; /* keep contents centered to avoid jumps */
       gap: 18px;
       background: rgba(0,0,0,0.65);
       border: 1px solid rgba(255,255,255,0.12);
       padding: 26px 28px;
       border-radius: 12px;
       min-width: 320px;
-      min-height: 420px; /* prevents expand/shrink */
+      min-height: 460px; /* prevents expand/shrink */
       box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-      transition: opacity 420ms ease, transform 420ms ease;
       overflow: hidden;
+      /* initial scaled-down state so it expands from the middle */
+      transform: scale(0.86);
+      opacity: 0;
+      transition: transform 1s cubic-bezier(.2,.9,.2,1), opacity 360ms ease;
+    }
+    /* when we add .scale-in the card expands to full size */
+    .login-card.scale-in {
+      transform: scale(1);
+      opacity: 1;
     }
     /* fade-out helper (used for login card) */
-    .login-card.fade-out { opacity: 0; transform: scale(0.98); pointer-events: none; }
+    .login-card.fade-out { opacity: 0; transform: scale(0.98); pointer-events: none; transition: transform 420ms ease, opacity 420ms ease; }
 
     /* splitting overlays (top+bottom) — start covering content, animate out */
     .split-top, .split-bottom {
@@ -238,7 +247,7 @@
       right: 0;
       background: rgba(0,0,0,0.76);
       z-index: 2500;
-      transition: transform 420ms cubic-bezier(.2,.9,.2,1);
+      transition: transform 1s cubic-bezier(.2,.9,.2,1);
       pointer-events: none;
     }
     .split-top { top: 0; height: 50%; transform: translateY(0); }
@@ -263,15 +272,17 @@
     }
     .account-btn:hover { background: rgba(255,255,255,0.06); }
 
-    /* fade helpers for account list / password area */
-    #accountButtons.fade-out { opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity 300ms ease, transform 300ms ease; }
-    #accountButtons.fade-in { opacity: 1; transform: translateY(0); pointer-events: auto; transition: opacity 300ms ease, transform 300ms ease; }
+    /* fade helpers for account list / password area
+       Use visibility to avoid layout reflow (display none -> display block was causing jumping) */
+    #accountButtons { transition: opacity 300ms ease, transform 300ms ease; }
+    #accountButtons.fade-out { opacity: 0; transform: translateY(-6px); visibility: hidden; }
+    #accountButtons.fade-in  { opacity: 1; transform: translateY(0); visibility: visible; }
 
-    /* Password area: will fade/slide into view */
+    /* Password area: will fade/slide into view; positioned in normal flow so it appears at correct place */
     #passwordArea {
       display: none;
       opacity: 0;
-      transform: translateY(6px);
+      transform: translateY(0);
       transition: opacity 300ms ease, transform 300ms ease;
       width:100%;
       gap:8px;
@@ -588,7 +599,7 @@
 
       <!-- login hint -->
       <div id="loginHint" style="font-size:0.85em; color:rgba(255,255,255,0.75);">
-        Click/Press your account to sign in!
+        Click/Press your account to sign in
       </div>
     </div>
   </div>
@@ -952,22 +963,18 @@
       updateClearButtonState();
 
       // If the login overlay is visible, play the split-open reveal animation for account list
-      if (loginOverlay.style.display !== 'none' && accountButtons.style.display !== 'none') {
-        // reset overlays visible then animate out
-        loginCard.classList.remove('split-open');
+      if (loginOverlay.style.display !== 'none' && accountButtons.style.visibility !== 'hidden') {
+        // show overlays then animate out
         splitTop.style.display = '';
         splitBottom.style.display = '';
-        // force reflow then open
         void loginCard.offsetWidth;
-        requestAnimationFrame(() => {
-          loginCard.classList.add('split-open');
-          // after transition hide overlays so they don't block pointer-events (they are pointer-events:none, but hide for cleanliness)
-          setTimeout(() => {
-            splitTop.style.display = 'none';
-            splitBottom.style.display = 'none';
-            loginCard.classList.remove('split-open'); // keep them cleared so next time we can repeat
-          }, 520);
-        });
+        loginCard.classList.add('split-open');
+        // after animation hide overlays
+        setTimeout(() => {
+          splitTop.style.display = 'none';
+          splitBottom.style.display = 'none';
+          loginCard.classList.remove('split-open');
+        }, 1000);
       }
     }
 
@@ -1023,11 +1030,12 @@
       passwordFlow.account = accountName;
       passwordFlow.mode = null;
 
-      // Fade account list out (no resize because login-card min-height prevents bounce)
+      // Fade account list out (visibility hidden to avoid reflow)
       accountButtons.classList.add('fade-out');
       accountButtons.classList.remove('fade-in');
+      // after the short fade, keep it hidden but still occupying layout
       setTimeout(() => {
-        accountButtons.style.display = 'none';
+        accountButtons.style.visibility = 'hidden';
       }, 320);
 
       // prepare password area, then animate it in (fade)
@@ -1085,26 +1093,24 @@
       }, 300);
 
       // show account buttons (fade in)
-      accountButtons.style.display = 'flex';
-      requestAnimationFrame(() => {
-        accountButtons.classList.remove('fade-out');
-        accountButtons.classList.add('fade-in');
+      accountButtons.style.visibility = 'visible';
+      accountButtons.classList.remove('fade-out');
+      accountButtons.classList.add('fade-in');
 
-        // play split-open reveal when showing accounts
-        splitTop.style.display = '';
-        splitBottom.style.display = '';
-        void loginCard.offsetWidth;
-        loginCard.classList.add('split-open');
-        setTimeout(() => {
-          splitTop.style.display = 'none';
-          splitBottom.style.display = 'none';
-          loginCard.classList.remove('split-open');
-        }, 520);
-      });
+      // play split-open reveal when showing accounts
+      splitTop.style.display = '';
+      splitBottom.style.display = '';
+      void loginCard.offsetWidth;
+      loginCard.classList.add('split-open');
+      setTimeout(() => {
+        splitTop.style.display = 'none';
+        splitBottom.style.display = 'none';
+        loginCard.classList.remove('split-open');
+      }, 1000);
 
       passwordArea.setAttribute('aria-hidden', 'true');
       avatarCircle.textContent = '';
-      loginHint.textContent = 'Click/Press your account to sign in!';
+      loginHint.textContent = 'Click/Press your account to sign in';
       pwPromptText.textContent = '';
 
       // clear inline error
@@ -1294,12 +1300,13 @@
       passwordArea.classList.remove('show');
       passwordArea.style.display = 'none';
       accountButtons.classList.remove('fade-out');
+      accountButtons.style.visibility = 'visible';
       accountButtons.style.display = 'flex';
       passwordFlow.active = false;
       passwordFlow.account = null;
       passwordFlow.mode = null;
       avatarCircle.textContent = '';
-      loginHint.textContent = 'Hover an account to preview initial, click to sign in';
+      loginHint.textContent = 'Click/Press your account to sign in';
       pwPromptText.textContent = '';
 
       // show sign out + change password buttons
@@ -1319,7 +1326,7 @@
       // fade the main UI out, then show lock screen (loginOverlay)
       pageInner.classList.add('fade-out');
 
-      // hide sign out and change buttons right away (so user can't re-click)
+      // hide sign out and change pw button right away (so user can't re-click)
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
 
@@ -1329,8 +1336,13 @@
 
         // show login overlay and animate card in
         loginOverlay.style.display = 'flex';
-        // ensure accountButtons visible
-        accountButtons.style.display = 'flex';
+        // ensure card animates (scale in)
+        loginCard.style.visibility = '';
+        // start scale-in
+        loginCard.classList.add('scale-in');
+
+        // ensure accountButtons visible and animate
+        accountButtons.style.visibility = 'visible';
         accountButtons.classList.remove('fade-out');
         accountButtons.classList.add('fade-in');
 
@@ -1343,7 +1355,7 @@
           splitTop.style.display = 'none';
           splitBottom.style.display = 'none';
           loginCard.classList.remove('split-open');
-        }, 520);
+        }, 1000);
 
         // reset password area hidden
         passwordArea.classList.remove('show');
@@ -1351,7 +1363,7 @@
 
         avatarCircle.textContent = '';
         // update login hint to the requested text
-        loginHint.textContent = 'Hover an account to preview initial, click to sign in';
+        loginHint.textContent = 'Click/Press your account to sign in';
         pwPromptText.textContent = '';
 
         // re-render messages so action buttons disappear
@@ -1781,6 +1793,12 @@
       // make sure split overlays start visible so first reveal works
       splitTop.style.display = '';
       splitBottom.style.display = '';
+
+      // play scale-in on the login card on first load (expand from middle over 1s)
+      requestAnimationFrame(() => {
+        // small microtask so CSS will transition from initial scale to scale-in
+        loginCard.classList.add('scale-in');
+      });
 
       updateClearButtonState();
     })();
