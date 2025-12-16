@@ -25,7 +25,9 @@
       margin: 40px auto;
       padding: 12px;
       box-sizing: border-box;
+      transition: opacity 420ms ease, transform 420ms ease;
     }
+    .page-inner.fade-out { opacity: 0; transform: scale(0.995); pointer-events: none; }
 
     /* How To Use button (moved to fixed left, same Y as Sign Out) - ORANGE */
     #howBtn {
@@ -54,6 +56,7 @@
       color: #fff;
       cursor: pointer;
       display: none; /* shown only when signed in */
+      transition: opacity 300ms ease;
     }
 
     /* Change Password button (placed left of Sign Out) - BLUE */
@@ -196,7 +199,9 @@
       font-size: 0.95em;
     }
 
-    /* Login overlay (full screen) */
+    /* Login overlay (full screen)
+       NOTE: made transparent so lock screen background matches message board exactly
+    */
     #loginOverlay {
       position: fixed;
       left: 0;
@@ -207,7 +212,7 @@
       align-items: center;
       justify-content: center;
       z-index: 3000;
-      background: rgba(0,0,0,0.55);
+      background: transparent; /* keep the exact same background as page (no dim) */
     }
     .login-card {
       display: flex;
@@ -236,8 +241,30 @@
       width: 260px; display: flex; align-items: center; gap: 12px;
       padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 16px;
+      transition: opacity 300ms ease, transform 300ms ease;
     }
     .account-btn:hover { background: rgba(255,255,255,0.06); }
+
+    /* fade helpers for account list / password area */
+    #accountButtons.fade-out { opacity: 0; transform: translateY(-6px); pointer-events: none; }
+    #accountButtons.fade-in { opacity: 1; transform: translateY(0); pointer-events: auto; transition: opacity 300ms ease, transform 300ms ease; }
+
+    /* Password area: will fade/slide into view */
+    #passwordArea {
+      display: none;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 300ms ease, transform 300ms ease;
+      width:100%;
+      gap:8px;
+      flex-direction:column;
+      align-items:stretch;
+    }
+    #passwordArea.show {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
 
     /* Admin panel (centered) */
     #adminPanel {
@@ -395,7 +422,6 @@
     .pw-modal input { width:100%; padding:8px; box-sizing:border-box; color:#000; background:#fff; border-radius:6px; border: none; }
 
     /* Password area */
-    #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
     #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
 
     /* small inline password error text */
@@ -442,6 +468,7 @@
       justify-content: center;
       z-index: 4000;
       pointer-events: none; /* no interaction while booting */
+      background: transparent; /* keep same background image visible */
     }
     #bootBox {
       display: flex;
@@ -457,8 +484,8 @@
     }
     #bootBox.show { opacity: 1; transform: scale(1); }
     #bootLogoWrap {
-      width: 180px;
-      height: 180px;
+      width: 260px;   /* much larger */
+      height: 260px;
       border-radius: 50%;
       display:flex;
       align-items:center;
@@ -466,18 +493,18 @@
       background: rgba(255,255,255,0.04);
     }
     #bootLogo {
-      width: 140px;   /* logo bigger */
-      height: 140px;
+      width: 220px;   /* logo much bigger */
+      height: 220px;
       object-fit: contain;
       display:block;
-      border-radius: 8px;
+      border-radius: 12px; /* keep rounded corners */
     }
     /* larger spinner */
     .boot-spinner {
-      width: 56px;   /* made bigger */
-      height: 56px;
+      width: 96px;   /* much bigger spinner */
+      height: 96px;
       border-radius: 50%;
-      border: 6px solid rgba(255,255,255,0.12);
+      border: 10px solid rgba(255,255,255,0.12);
       border-top-color: rgba(255,255,255,0.95);
       animation: spin 1s linear infinite;
       box-sizing: border-box;
@@ -497,9 +524,9 @@
       #howBtn { left: 8px; top: 12px; }
       #signOutBtn { right: 8px; top: 12px; }
       #changePwBtn { right: 84px; top: 12px; }
-      #bootLogoWrap { width: 140px; height: 140px; }
-      #bootLogo { width: 108px; height: 108px; }
-      .boot-spinner { width: 48px; height: 48px; border-width: 5px; }
+      #bootLogoWrap { width: 200px; height: 200px; }
+      #bootLogo { width: 170px; height: 170px; }
+      .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
     }
   </style>
 </head>
@@ -519,7 +546,7 @@
         <!-- Inline error appears here for incorrect passwords -->
         <div id="pwErr" class="pw-error" aria-live="polite"></div>
 
-        <div id="enterPw" style="display:none; gap:8px; flex-direction:column;">
+        <div id="enterPw" style="display:flex; gap:8px; flex-direction:column;">
           <input id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" />
           <div style="display:flex; gap:8px;">
             <button id="submitPwBtn">Submit</button>
@@ -537,7 +564,7 @@
         </div>
       </div>
 
-      <!-- login hint (changed to requested exact string) -->
+      <!-- login hint -->
       <div id="loginHint" style="font-size:0.85em; color:rgba(255,255,255,0.75);">
         Click/Press your account to sign in!
       </div>
@@ -548,8 +575,7 @@
   <div id="bootOverlay" aria-hidden="true">
     <div id="bootBox" role="presentation" aria-hidden="true">
       <div id="bootLogoWrap" aria-hidden="true">
-        <!-- Use the image file you uploaded next to index.html.
-             If your file has a different name change the src accordingly. -->
+        <!-- Keep exactly the same logo file you uploaded next to index.html. If name differs, update src -->
         <img id="bootLogo" src="Message%20Board.png" alt="Message Board Logo" />
       </div>
       <div class="boot-spinner" role="status" aria-label="Loading"></div>
@@ -951,8 +977,24 @@
       passwordFlow.active = true;
       passwordFlow.account = accountName;
       passwordFlow.mode = null;
-      accountButtons.style.display = 'none';
+
+      // fade the account list away, then slide/fade the password area in
+      accountButtons.classList.add('fade-out');
+      accountButtons.classList.remove('fade-in');
+      setTimeout(() => {
+        accountButtons.style.display = 'none';
+      }, 320);
+
+      // prepare password area, then animate it in
+      passwordArea.classList.remove('show');
       passwordArea.style.display = 'flex';
+      // small timeout to allow layout then add class to trigger transition
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          passwordArea.classList.add('show');
+        });
+      });
+
       passwordArea.setAttribute('aria-hidden', 'false');
       loginHint.textContent = '';
       avatarCircle.textContent = (accountName && typeof accountName === 'string') ? accountName.trim().charAt(0).toUpperCase() : '';
@@ -991,9 +1033,21 @@
       passwordFlow.active = false;
       passwordFlow.account = null;
       passwordFlow.mode = null;
-      passwordArea.style.display = 'none';
-      passwordArea.setAttribute('aria-hidden', 'true');
+
+      // fade password area out and restore account list
+      passwordArea.classList.remove('show');
+      setTimeout(() => {
+        passwordArea.style.display = 'none';
+      }, 300);
+
+      // show account buttons (fade in)
       accountButtons.style.display = 'flex';
+      requestAnimationFrame(() => {
+        accountButtons.classList.remove('fade-out');
+        accountButtons.classList.add('fade-in');
+      });
+
+      passwordArea.setAttribute('aria-hidden', 'true');
       avatarCircle.textContent = '';
       loginHint.textContent = 'Click/Press your account to sign in!';
       pwPromptText.textContent = '';
@@ -1094,18 +1148,17 @@
     // - wait 3 seconds
     // - fade boot overlay out and then call finishLoginAs
     function startBootSequence(accountName) {
-      // fade out the login card
+      // fade out the login card (nice scale + opacity)
       loginCard.classList.add('fade-out');
 
-      // after fade completes (~420ms), hide the login card (but keep overlay background)
+      // after fade completes (~420ms), hide the login card (but keep overlay area)
       setTimeout(() => {
-        // hide the card but keep the overlay dimming in place (so background remains consistent)
+        // hide the card but keep the overlay visible
         loginCard.style.visibility = 'hidden';
 
         // show boot overlay and animate in the boot box
         bootOverlay.style.display = 'flex';
-        // ensure the logo image is present (file must be next to index.html)
-        // remove 'hidden' if present; show bootBox
+        // animate in
         requestAnimationFrame(() => {
           bootBox.classList.add('show');
         });
@@ -1182,7 +1235,9 @@
       messageInput.focus();
 
       // clear password flow UI state
+      passwordArea.classList.remove('show');
       passwordArea.style.display = 'none';
+      accountButtons.classList.remove('fade-out');
       accountButtons.style.display = 'flex';
       passwordFlow.active = false;
       passwordFlow.account = null;
@@ -1204,24 +1259,37 @@
     // SIGN OUT behavior
     function signOut() {
       currentUser = null;
-      pageInner.style.display = 'none';
-      loginOverlay.style.display = '';
-      adminPanel.style.display = 'none';
-      passwordArea.style.display = 'none';
-      passwordArea.setAttribute('aria-hidden', 'true');
-      avatarCircle.textContent = '';
-      accountButtons.style.display = 'flex';
-      // hide sign out & change pw button explicitly
+
+      // fade the main UI out, then show lock screen (loginOverlay)
+      pageInner.classList.add('fade-out');
+
+      // hide sign out and change buttons right away (so user can't re-click)
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
-      if (nameSelect) {
-        nameSelect.selectedIndex = 0;
-        nameSelect.disabled = false;
-      }
-      updateClearButtonState();
 
-      // re-render messages so action buttons disappear
-      renderMessages(lastMessages);
+      setTimeout(() => {
+        pageInner.style.display = 'none';
+        pageInner.classList.remove('fade-out');
+
+        // show login overlay and animate card in
+        loginOverlay.style.display = 'flex';
+        // ensure accountButtons visible
+        accountButtons.style.display = 'flex';
+        accountButtons.classList.remove('fade-out');
+        accountButtons.classList.add('fade-in');
+
+        // reset password area hidden
+        passwordArea.classList.remove('show');
+        passwordArea.style.display = 'none';
+
+        avatarCircle.textContent = '';
+        // update login hint to the requested text
+        loginHint.textContent = 'Hover an account to preview initial, click to sign in';
+        pwPromptText.textContent = '';
+
+        // re-render messages so action buttons disappear
+        renderMessages(lastMessages);
+      }, 420);
     }
 
     // wire up signOut button
@@ -1640,6 +1708,8 @@
       changePwBtn.style.display = 'none';
       // ensure cpCurrent visible by default
       cpCurrent.style.display = '';
+      // ensure account buttons start visible
+      accountButtons.classList.add('fade-in');
       updateClearButtonState();
     })();
   </script>
