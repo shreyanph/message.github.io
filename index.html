@@ -1,4 +1,3 @@
-<!-- Edited from original source: :contentReference[oaicite:1]{index=1} -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1293,23 +1292,36 @@
         pageInner.style.display = 'none';
         pageInner.classList.remove('fade-out');
 
+        // --- START: Changed to use the same startup animation sequence ---
         loginOverlay.style.display = 'flex';
         loginCard.style.visibility = '';
-        loginCard.classList.add('scale-in');
+        // ensure we start from the collapsed state and remove any leftover classes
+        loginCard.classList.remove('fade-out');
+        loginCard.classList.remove('split-open');
+        loginCard.classList.remove('scale-in'); // reset to collapsed; requestAnimationFrame will add scale-in
 
+        // show split overlays and account buttons then trigger the same frame-based entry used at init
+        splitTop.style.display = '';
+        splitBottom.style.display = '';
         accountButtons.style.visibility = 'visible';
         accountButtons.classList.remove('fade-out');
         accountButtons.classList.add('fade-in');
 
-        splitTop.style.display = '';
-        splitBottom.style.display = '';
-        void loginCard.offsetWidth;
-        loginCard.classList.add('split-open');
+        // use RAF to match the initial startup sequence so transform + split animation sync
+        requestAnimationFrame(() => {
+          // add scale-in to animate from center
+          loginCard.classList.add('scale-in');
+          // force layout then open split overlays outward
+          void loginCard.offsetWidth;
+          loginCard.classList.add('split-open');
+        });
+
         setTimeout(() => {
           splitTop.style.display = 'none';
           splitBottom.style.display = 'none';
           loginCard.classList.remove('split-open');
         }, 3000);
+        // --- END: Changed to use the same startup animation sequence ---
 
         passwordArea.style.display = 'none';
 
