@@ -1623,19 +1623,73 @@
 
           const wrapper = document.createElement('div');
           wrapper.className = 'replies-wrapper';
+
+          // Render each reply as a normal message row (indented) but without reply button
           for (const r of replies) {
-            const rep = document.createElement('div');
-            rep.className = 'reply';
-            const rn = document.createElement('span');
-            rn.className = 'r-name';
-            rn.textContent = (r.name || 'Unknown') + ':';
-            const rt = document.createElement('span');
-            rt.className = 'r-text';
-            rt.textContent = ' ' + (r.text || '');
-            rep.appendChild(rn);
-            rep.appendChild(rt);
-            wrapper.appendChild(rep);
+            const whoR = (r.name && String(r.name).trim()) ? String(r.name).trim() : 'Unknown';
+            const textR = (r.text && String(r.text)) ? r.text : '';
+
+            const rowR = document.createElement('div');
+            rowR.className = 'message-row';
+            rowR.style.position = 'relative';
+
+            const divR = document.createElement('div');
+            divR.className = 'message';
+            try { divR.style.background = colorForName(whoR); } catch (e) { divR.style.background = 'rgba(0,0,0,0.45)'; }
+
+            const nameSpanR = document.createElement('span');
+            nameSpanR.className = 'name';
+            nameSpanR.textContent = whoR + ':';
+
+            const contentSpanR = document.createElement('span');
+            contentSpanR.className = 'content';
+            contentSpanR.textContent = ' ' + textR;
+
+            divR.appendChild(nameSpanR);
+            divR.appendChild(contentSpanR);
+
+            // actions for replies: same as normal messages (edit/delete when allowed)
+            const actionsR = document.createElement('div');
+            actionsR.className = 'actions';
+
+            const canActR = (currentUser === ADMIN_NAME) || (currentUser && currentUser === whoR);
+
+            if (canActR) {
+              const trashR = document.createElement('button');
+              trashR.className = 'icon-btn trash';
+              trashR.title = 'Delete reply';
+              trashR.innerHTML = '🗑';
+              trashR.addEventListener('click', async (ev) => {
+                ev.stopPropagation();
+                const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === whoR);
+                if (!allowedNow) { alert('Not allowed to delete this reply.'); return; }
+                try {
+                  await deleteDoc(doc(db, 'messages', r.id));
+                } catch (err) {
+                  alert('Failed to delete reply: ' + (err.message || err));
+                }
+              });
+              actionsR.appendChild(trashR);
+
+              const editR = document.createElement('button');
+              editR.className = 'icon-btn pencil';
+              editR.title = 'Edit reply';
+              editR.innerHTML = '✏';
+              editR.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === whoR);
+                if (!allowedNow) { alert('Not allowed to edit this reply.'); return; }
+                startEdit(rowR, divR, contentSpanR, r);
+              });
+              actionsR.appendChild(editR);
+            }
+
+            // assemble reply row (no replyBtn, so users cannot reply-to-reply)
+            rowR.appendChild(divR);
+            rowR.appendChild(actionsR);
+            wrapper.appendChild(rowR);
           }
+
           messagesDiv.appendChild(wrapper);
         }
 
