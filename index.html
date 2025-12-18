@@ -43,32 +43,57 @@
       color: #fff;
     }
 
-    /* Left DM panel (slightly to the left of How To Use) */
-    #dmPanel {
+    /* Left DM panel (updated per request) */
+    #returnMainBtn {
       position: fixed;
       top: 12px;
-      left: 20px;
-      width: 160px;
+      left: 20px; /* positioned above DM panel (same left as DM panel) */
+      z-index: 5003;
+      background: rgba(0,180,0,0.95); /* green */
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      display: none; /* shown only when in DM mode */
+    }
+
+    #dmPanel {
+      position: fixed;
+      top: 60px;        /* moved down to avoid How To Use */
+      left: 20px;       /* moved to the right (user requested left:20px) */
+      width: 800px;     /* enlarged by ~5x (was 160px) */
+      min-height: 360px;/* bigger height */
       z-index: 5002;
       background: rgba(0,0,0,0.75);
       border: 1px solid rgba(255,255,255,0.08);
-      padding: 8px;
-      border-radius: 6px;
-      display: flex;
+      padding: 16px;
+      border-radius: 12px;
+      display: none;    /* show only when in main message center */
       flex-direction: column;
-      gap: 6px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      gap: 12px;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
       color: #fff;
+      overflow: auto;
+      transform-origin: center center;
+      /* START: make the DM panel animate exactly like the login card (expand from middle) */
+      transform: scaleY(0);
+      transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease;
     }
+    /* when visible, scale-in (same style name as login-card.scale-in) */
+    #dmPanel.scale-in { transform: scaleY(1); }
+    /* END */
+
     .dm-acc-btn {
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.06);
       color: #fff;
-      padding: 6px 8px;
-      border-radius: 6px;
+      padding: 8px 10px;
+      border-radius: 8px;
       cursor: pointer;
       text-align: left;
-      font-size: 13px;
+      font-size: 14px;
+      width: 100%;
     }
     .dm-acc-btn:hover { background: rgba(255,255,255,0.06); }
 
@@ -703,8 +728,9 @@
       #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
       .replies-wrapper { margin-left: 32px; padding-left: 10px; }
-      #dmPanel { left: -140px; width: 140px; }
+      #dmPanel { left: 20px; width: 92%; min-height: 260px; top: 96px; }
       .dm-modal { width: 92%; }
+      #returnMainBtn { left: 20px; top: 12px; }
     }
   </style>
 </head>
@@ -762,6 +788,9 @@
       <div class="boot-spinner" role="status" aria-label="Loading"></div>
     </div>
   </div>
+
+  <!-- Return to Main Server button (above DM panel) -->
+  <button id="returnMainBtn" title="Return to main server">Return to Main Server</button>
 
   <!-- Left DM panel (accounts except Administrator) -->
   <div id="dmPanel" aria-hidden="true"></div>
@@ -971,6 +1000,7 @@
     const dmModalText = document.getElementById('dmModalText');
     const dmYesBtn = document.getElementById('dmYesBtn');
     const dmNoBtn = document.getElementById('dmNoBtn');
+    const returnMainBtn = document.getElementById('returnMainBtn');
 
     // hide page until login
     pageInner.style.display = 'none';
@@ -1029,6 +1059,30 @@
       console.error('Accounts listener error:', err);
       populateAccounts([]);
     });
+
+    function updateDMVisibility() {
+      // show DM panel only when we're in the main message center (pageInner visible)
+      // and when there are account buttons present (i.e., dmPanel has children)
+      const shouldBeVisible = dmPanel.children.length > 0 && pageInner.style.display !== 'none' && !passwordFlow.active;
+      if (shouldBeVisible) {
+        dmPanel.style.display = 'flex';
+        // trigger scale-in animation exactly like the lock screen
+        requestAnimationFrame(() => {
+          dmPanel.classList.add('scale-in');
+        });
+      } else {
+        // hide with reverse animation by removing scale-in then display none after a short delay
+        dmPanel.classList.remove('scale-in');
+        // small timeout to allow transform to finish visually (match 3s timing used for scale)
+        setTimeout(() => {
+          // only hide if still not scale-in
+          if (!dmPanel.classList.contains('scale-in')) dmPanel.style.display = 'none';
+        }, 320);
+      }
+
+      // Return to Main Server button should only show when in DM mode (dmModeTarget set)
+      returnMainBtn.style.display = dmModeTarget ? '' : 'none';
+    }
 
     function populateAccounts(list) {
       accountButtons.innerHTML = "";
@@ -1169,16 +1223,22 @@
               return;
             }
             pendingDMTarget = nm;
-            dmModalText.textContent = `Create DM with ${nm}?`;
+            // If a DM already exists, prompt to continue/replace
+            if (dmModeTarget && dmModeTarget !== nm) {
+              dmModalText.textContent = `Continue DM with ${nm} (replace ${dmModeTarget})?`;
+            } else if (dmModeTarget === nm) {
+              dmModalText.textContent = `Continue DM with ${nm}?`;
+            } else {
+              dmModalText.textContent = `Create DM with ${nm}?`;
+            }
             dmBackdrop.style.display = 'flex';
           });
           dmPanel.appendChild(b);
         }
-        // make sure the panel is visible when accounts exist
-        dmPanel.style.display = finalList.length > 1 ? 'flex' : 'none';
-      } else {
-        dmPanel.style.display = 'none';
       }
+
+      // update DM visibility based on whether we're in main message center
+      updateDMVisibility();
 
       // If the login overlay is visible, play the split-open reveal animation for account list
       if (loginOverlay.style.display !== 'none' && accountButtons.style.visibility !== 'hidden') {
@@ -1249,6 +1309,11 @@
       passwordFlow.account = accountName;
       passwordFlow.mode = null;
 
+      // Hide DM panel while in password flow
+      dmPanel.classList.remove('scale-in');
+      dmPanel.style.display = 'none';
+      returnMainBtn.style.display = 'none';
+
       // immediate swap: hide accounts list and show password area (no fade/condense)
       accountButtons.style.display = 'none';
       passwordArea.style.display = 'flex';
@@ -1304,6 +1369,9 @@
       pwErr.style.display = 'none';
       pwErr.textContent = '';
       passwordInput.classList.remove('input-error');
+
+      // update DM panel visibility (back to main message center if displayed)
+      updateDMVisibility();
     }
 
     document.getElementById('cancelPwBtn').addEventListener('click', endPasswordFlow);
@@ -1483,6 +1551,9 @@
 
       // re-render messages so action buttons update to match currentUser
       renderMessages(lastMessages);
+
+      // After signing in, update DM visibility (panel should be visible only in main center)
+      updateDMVisibility();
     }
 
     // Helper: show/hide admin panel with CSS class so it unfolds/folds
@@ -1527,6 +1598,7 @@
 
       // exit DM mode on sign out
       dmModeTarget = null;
+      updateDMVisibility();
 
       setTimeout(() => {
         pageInner.style.display = 'none';
@@ -2079,13 +2151,22 @@
         dmBackdrop.style.display = 'none';
         return;
       }
-      // create DM with pendingDMTarget
+      // create/continue DM with pendingDMTarget (replace existing if necessary)
       dmModeTarget = pendingDMTarget;
       pendingDMTarget = null;
       dmBackdrop.style.display = 'none';
       // re-render messages to show DM conversation only
       renderMessages(lastMessages);
-      alert(`DM with ${dmModeTarget} created. Messages you send will go only to ${dmModeTarget} until you sign out or refresh.`);
+      // show Return to Main Server button
+      updateDMVisibility();
+      alert(`DM with ${dmModeTarget} created/continued. Messages you send will go only to ${dmModeTarget} until you return to the main server or sign out.`);
+    });
+
+    // Return to Main Server (exit DM mode)
+    returnMainBtn.addEventListener('click', () => {
+      dmModeTarget = null;
+      updateDMVisibility();
+      renderMessages(lastMessages);
     });
 
     // clear button state & handler (admin only).
@@ -2167,10 +2248,9 @@
       splitTop.style.display = '';
       splitBottom.style.display = '';
 
-      // START: ensure login overlay and account buttons are visible on initial load
+      // ensure login overlay and account buttons are visible on initial load
       loginOverlay.style.display = 'flex';
       accountButtons.style.visibility = 'visible';
-      // END
 
       requestAnimationFrame(() => {
         loginCard.classList.add('scale-in');
@@ -2178,8 +2258,9 @@
       updateClearButtonState();
       // ensure admin panel starts hidden (in case CSS transitions toggle)
       adminPanel.style.display = 'none';
+      // ensure DM visibility reflects initial state
+      updateDMVisibility();
     })();
   </script>
 </body>
 </html>
-
