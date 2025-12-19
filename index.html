@@ -76,7 +76,7 @@
 
     h2 { margin-bottom: 10px; color: #ffffff; }
 
-    input, textarea, select {
+    input, select {
       width: 100%;
       box-sizing: border-box;
       color: #ffffff;
@@ -84,7 +84,44 @@
       border: 1px solid rgba(255,255,255,0.25);
       padding: 8px;
     }
-    textarea { height: 80px; resize: vertical; }
+
+    /* we replace textarea with contenteditable; style it similarly */
+    .editable-input {
+      min-height: 80px;
+      max-height: 240px;
+      overflow: auto;
+      width: 100%;
+      box-sizing: border-box;
+      color: #ffffff;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 8px;
+      border-radius: 4px;
+      outline: none;
+      white-space: pre-wrap;
+    }
+
+    /* formatting toolbar */
+    .format-toolbar {
+      display:flex;
+      gap:8px;
+      margin-top:6px;
+    }
+    .format-btn {
+      min-width:36px;
+      min-height:32px;
+      padding:6px;
+      border-radius:6px;
+      border:none;
+      background: rgba(255,255,255,0.04);
+      color:#fff;
+      cursor:pointer;
+      font-weight:700;
+    }
+    .format-btn.active {
+      background: rgba(30,144,255,0.95); /* blue when active */
+      color: #fff;
+    }
 
     /* input error border for password input */
     input.input-error {
@@ -201,7 +238,7 @@
       margin: 8px 0;
     }
 
-    #messages, input, textarea, select { backdrop-filter: blur(2px); }
+    #messages, input, select { backdrop-filter: blur(2px); }
 
     /* Timestamp row */
     .timestamp-row {
@@ -383,7 +420,6 @@
       gap: 8px;
       align-items: center;
     }
-    .emoji-row textarea { width: auto; flex: 1 1 auto; min-height: 44px; }
     #emojiBtn {
       min-width: 44px;
       height: 44px;
@@ -596,15 +632,14 @@
       color: #fff;
       padding: 6px 10px;
       border-radius: 8px;
-      /* START EDIT: orange background box for "Replying to X..." */
+      /* orange background box for "Replying to X..." */
       background: rgba(255,165,0,0.95);
       color: #ffffff;
       border: 1px solid rgba(255,165,0,0.95);
-      /* END EDIT */
       margin: 8px 0;
       font-size: 0.95em;
     }
-    /* Cancel reply button - RED background per request */
+    /* Cancel reply button - RED background per earlier request */
     .reply-indicator .cancel-reply {
       background: rgba(220,20,60,0.95); /* red background */
       border: none;
@@ -614,7 +649,7 @@
       cursor: pointer;
     }
 
-    /* Send button - GREEN background per request */
+    /* Send button - GREEN background per earlier request */
     #sendBtn {
       background: rgba(0,180,0,0.95); /* green */
       border: none;
@@ -637,20 +672,17 @@
       margin-top: 10px;
     }
 
-    /* layout for From / Chatting With rows */
-    .from-row, .chat-with-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
+    /* small layout for From: and Chatting With: */
+    .from-row, .chatwith-row {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:8px;
     }
-    .from-row label, .chat-with-row label {
-      white-space: nowrap;
-      font-weight: 600;
-      color: #fff;
-    }
-    .from-row select, .chat-with-row select {
-      min-width: 220px;
+    .from-row label, .chatwith-row label {
+      min-width:64px;
+      font-weight:700;
+      color:#fff;
     }
 
     @media (max-width: 640px) {
@@ -663,7 +695,6 @@
       #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
       .replies-wrapper { margin-left: 32px; padding-left: 10px; }
-      .from-row select, .chat-with-row select { min-width: 140px; }
     }
   </style>
 </head>
@@ -738,34 +769,40 @@
 
     <h2 style="margin-top:6px;">Message Board</h2>
 
-    <!-- FROM row: exact text "From: " to the left of the select -->
+    <!-- FROM label + select (moved right a bit visually by label) -->
     <div class="from-row" aria-hidden="false">
       <label for="nameSelect">From:</label>
-      <select id="nameSelect" required>
+      <select id="nameSelect" required style="width: calc(100% - 72px);">
         <option value="" disabled selected>Select a name</option>
       </select>
     </div>
 
-    <!-- Chatting With dropdown (all accounts + Main Server default) -->
-    <div class="chat-with-row">
+    <!-- Chatting With dropdown below -->
+    <div class="chatwith-row">
       <label for="chatWithSelect">Chatting With:</label>
-      <select id="chatWithSelect" required>
-        <option value="Main Server" selected>Main Server</option>
-        <!-- accounts will be appended dynamically -->
+      <select id="chatWithSelect" style="width: calc(100% - 72px);">
+        <option value="__MAIN__" selected>Main Server</option>
       </select>
     </div>
 
     <br>
 
-    <!-- emoji-row: textarea + emoji button on same row -->
+    <!-- emoji-row: contenteditable div + emoji button on same row -->
     <div class="emoji-row" id="emojiRow" style="position:relative;">
-      <textarea id="messageInput" placeholder="Type a message..."></textarea>
+      <div id="messageInput" class="editable-input" contenteditable="true" role="textbox" aria-multiline="true" placeholder="Type a message..."></div>
       <button id="emojiBtn" type="button" title="Insert emoji">😊</button>
 
       <!-- emoji picker -->
       <div id="emojiPicker" class="emoji-picker" aria-hidden="true">
         <div class="emoji-grid" id="emojiGrid"></div>
       </div>
+    </div>
+
+    <!-- formatting toolbar (B I U) -->
+    <div class="format-toolbar" aria-hidden="false">
+      <button id="boldBtn" class="format-btn" title="Bold (Ctrl+B)"><b>B</b></button>
+      <button id="italicBtn" class="format-btn" title="Italic (Ctrl+I)"><i>I</i></button>
+      <button id="underlineBtn" class="format-btn" title="Underline (Ctrl+U)"><u>U</u></button>
     </div>
 
     <!-- Reply indicator (appears when replying to a specific message) -->
@@ -856,7 +893,7 @@
     // DOM refs
     const nameSelect = document.getElementById('nameSelect');
     const chatWithSelect = document.getElementById('chatWithSelect');
-    const messageInput = document.getElementById('messageInput');
+    const messageInput = document.getElementById('messageInput'); // contenteditable
     const sendBtn = document.getElementById('sendBtn');
     const deleteCurrentBtn = document.getElementById('deleteCurrentBtn');
     const clearBtn = document.getElementById('clearBtn');
@@ -924,6 +961,11 @@
     const replyIndicator = document.getElementById('replyIndicator');
     const replyIndicatorText = document.getElementById('replyIndicatorText');
     const cancelReplyBtn = document.getElementById('cancelReplyBtn');
+
+    // formatting toolbar refs
+    const boldBtn = document.getElementById('boldBtn');
+    const italicBtn = document.getElementById('italicBtn');
+    const underlineBtn = document.getElementById('underlineBtn');
 
     // hide page until login
     pageInner.style.display = 'none';
@@ -1100,24 +1142,28 @@
         nameSelect.appendChild(opt);
       }
 
-      // populate chatWithSelect (Chatting With:)
-      // Keep "Main Server" as the first/default option
-      chatWithSelect.innerHTML = "";
+      // populate chatWithSelect (Chatting With:) - includes Main Server + all accounts EXCEPT the currently signed-in user
+      const prevVal = chatWithSelect.value || "__MAIN__";
+      chatWithSelect.innerHTML = '';
       const mainOpt = document.createElement('option');
-      mainOpt.value = "Main Server";
+      mainOpt.value = "__MAIN__";
       mainOpt.textContent = "Main Server";
-      mainOpt.selected = true;
       chatWithSelect.appendChild(mainOpt);
 
-      const seen3 = new Set();
       for (const n of finalList) {
-        if (!n || seen3.has(n)) continue;
-        seen3.add(n);
+        if (!n) continue;
+        // when user is signed in, they should not see themselves in Chatting With list (can't DM yourself)
+        if (currentUser && n === currentUser) continue;
         const opt = document.createElement('option');
         opt.value = n;
         opt.textContent = n;
         chatWithSelect.appendChild(opt);
       }
+
+      // try to restore previous selection if still valid, otherwise keep Main Server
+      const stillValid = Array.from(chatWithSelect.options).some(o => o.value === prevVal);
+      if (stillValid) chatWithSelect.value = prevVal;
+      else chatWithSelect.value = "__MAIN__";
 
       updateClearButtonState();
 
@@ -1318,7 +1364,7 @@
       }
     });
 
-    // submit on Enter
+    // submit on Enter for password area
     passwordInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1359,6 +1405,12 @@
 
     function finishLoginAs(accountName) {
       currentUser = accountName;
+
+      // After login, ensure chatWithSelect excludes the signed-in user
+      // We'll call populateAccounts to refresh the chatWith options when accounts change,
+      // but here we also ensure the current user isn't present in the Chatting With dropdown.
+      // (populateAccounts will be called via realtime listener; this ensures immediate compliance)
+      // (we still call populateAccounts with last-known accounts if needed)
       pageInner.style.display = '';
       if (currentUser === ADMIN_NAME) {
         showAdminPanel();           // show with animation
@@ -1404,6 +1456,16 @@
         nameSelect.disabled = true;
       }
 
+      // Refresh Chatting With options to ensure currentUser isn't listed
+      // We'll fetch current accounts doc once to rebuild chatWithSelect properly
+      (async () => {
+        try {
+          const snap = await getDoc(accountsDocRef);
+          const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+          populateAccounts(list); // repopulate which will set chatWithSelect correctly
+        } catch (e) { /* ignore */ }
+      })();
+
       messageInput.focus();
 
       // restore password UI to hidden and account list visible
@@ -1422,7 +1484,7 @@
 
       updateClearButtonState();
 
-      // re-render messages so action buttons update to match currentUser
+      // re-render messages so action buttons update to match currentUser and chatWith selection
       renderMessages(lastMessages);
     }
 
@@ -1593,24 +1655,22 @@
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      // Determine current chat context from chatWithSelect
-      const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
+      // Determine chat context from chatWithSelect
+      const chatTarget = (chatWithSelect.value || "__MAIN__");
 
-      // Filter messages depending on Chatting With:
-      // - If chatWith == "Main Server": show only public messages (dmTarget == null)
-      // - Else (chatWith is an account): show messages that are DMs between currentUser and chatWith
+      // Filter messages depending on chat target:
       let visibleMessages = [];
-      if (chatWith === "Main Server") {
+      if (chatTarget === "__MAIN__") {
         visibleMessages = messages.filter(m => !m.dmTarget);
       } else {
-        if (!currentUser) {
-          visibleMessages = [];
-        } else {
+        if (!currentUser) { visibleMessages = []; }
+        else {
           visibleMessages = messages.filter(m => {
             if (!m.dmTarget) return false;
+            // show when message is between currentUser and chatTarget
             const sentBy = (m.name || "");
             const t = m.dmTarget;
-            return (t === chatWith && sentBy === currentUser) || (t === currentUser && sentBy === chatWith);
+            return (t === chatTarget && sentBy === currentUser) || (t === currentUser && sentBy === chatTarget);
           });
         }
       }
@@ -1653,12 +1713,13 @@
 
         const contentSpan = document.createElement('span');
         contentSpan.className = 'content';
-        contentSpan.textContent = ' ' + text;
+        // Use innerHTML to render formatting (we store html in messages)
+        contentSpan.innerHTML = ' ' + text;
 
         div.appendChild(nameSpan);
         div.appendChild(contentSpan);
 
-        // Reply button (now appears only on hover, via CSS) -- only allowed for top-level visible messages
+        // Reply button (now appears only on hover, via CSS)
         const replyBtn = document.createElement('button');
         replyBtn.type = 'button';
         replyBtn.className = 'icon-btn reply-btn';
@@ -1694,7 +1755,6 @@
             try {
               // delete the message and any replies referencing it
               await deleteDoc(doc(db, 'messages', m.id));
-              // find replies and delete them (optional: could keep replies; here we delete)
               const snap = await getDocs(messagesQuery);
               const deletes = [];
               snap.forEach(snapDoc => {
@@ -1759,7 +1819,7 @@
 
             const contentSpanR = document.createElement('span');
             contentSpanR.className = 'content';
-            contentSpanR.textContent = ' ' + textR;
+            contentSpanR.innerHTML = ' ' + textR;
 
             divR.appendChild(nameSpanR);
             divR.appendChild(contentSpanR);
@@ -1874,7 +1934,7 @@
         try {
           await setDoc(doc(db, 'messages', m.id), { text: newText }, { merge: true });
           editWrap.remove();
-          contentSpan.textContent = ' ' + newText;
+          contentSpan.innerHTML = ' ' + newText;
           contentSpan.style.display = '';
         } catch (err) {
           alert('Failed to save edit: ' + (err.message || err));
@@ -1950,16 +2010,50 @@
 
     // send message
     sendBtn.addEventListener('click', addMessage);
-    messageInput.addEventListener('keydown', e => {
+
+    // handle Enter in contenteditable: send on Enter (no shift), allow newline with Shift+Enter
+    messageInput.addEventListener('keydown', (e) => {
+      // Keyboard shortcuts for formatting: Ctrl+B / Ctrl+I / Ctrl+U
+      if (e.ctrlKey || e.metaKey) {
+        const key = e.key.toLowerCase();
+        if (key === 'b') { e.preventDefault(); document.execCommand('bold'); updateFormatButtons(); return; }
+        if (key === 'i') { e.preventDefault(); document.execCommand('italic'); updateFormatButtons(); return; }
+        if (key === 'u') { e.preventDefault(); document.execCommand('underline'); updateFormatButtons(); return; }
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         addMessage();
       }
     });
 
-    // Delete Current Message clears the message input (red button)
+    // formatting buttons behavior
+    boldBtn.addEventListener('click', (ev) => { ev.preventDefault(); document.execCommand('bold'); updateFormatButtons(); messageInput.focus(); });
+    italicBtn.addEventListener('click', (ev) => { ev.preventDefault(); document.execCommand('italic'); updateFormatButtons(); messageInput.focus(); });
+    underlineBtn.addEventListener('click', (ev) => { ev.preventDefault(); document.execCommand('underline'); updateFormatButtons(); messageInput.focus(); });
+
+    // keep toolbar in sync with caret state
+    function updateFormatButtons() {
+      try {
+        const isBold = document.queryCommandState('bold');
+        const isItalic = document.queryCommandState('italic');
+        const isUnderline = document.queryCommandState('underline');
+        boldBtn.classList.toggle('active', isBold);
+        italicBtn.classList.toggle('active', isItalic);
+        underlineBtn.classList.toggle('active', isUnderline);
+      } catch (e) {
+        // ignore if queryCommandState unsupported
+      }
+    }
+
+    // observe selection change to update toolbar state
+    document.addEventListener('selectionchange', () => {
+      if (document.activeElement === messageInput) updateFormatButtons();
+    });
+
+    // Delete Current Message clears the contenteditable
     deleteCurrentBtn.addEventListener('click', () => {
-      messageInput.value = '';
+      messageInput.innerHTML = '';
       // also cancel reply state if any
       replyTargetId = null;
       replyTargetName = null;
@@ -1972,27 +2066,28 @@
       let sendName;
       if (currentUser && currentUser !== ADMIN_NAME) sendName = currentUser;
       else sendName = (nameSelect.value || "").trim();
-      const text = (messageInput.value || "").trim();
-      if (!sendName || !text) return;
+      // get message HTML from contenteditable
+      const textHtml = (messageInput.innerHTML || '').trim();
+      // avoid sending if empty (remove tags like <br> etc)
+      const textPlain = messageInput.innerText || messageInput.textContent || '';
+      if (!sendName || !textPlain.trim()) return;
       try {
         // include parentId when replying
-        const payload = { name: sendName, text, time: serverTimestamp() };
+        const payload = { name: sendName, text: textHtml, time: serverTimestamp() };
         if (replyTargetId) payload.parentId = replyTargetId;
-
-        // Use Chatting With dropdown to decide if this is a DM or main server message
-        const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
-        if (chatWith && chatWith !== "Main Server") {
-          payload.dmTarget = chatWith;
-        }
+        // determine dmTarget from chatWithSelect
+        const chatTarget = chatWithSelect.value || "__MAIN__";
+        if (chatTarget !== "__MAIN__") payload.dmTarget = chatTarget;
 
         await addDoc(collection(db, 'messages'), payload);
-        messageInput.value = "";
+        messageInput.innerHTML = "";
         // clear reply state after send
         replyTargetId = null;
         replyTargetName = null;
         replyIndicator.style.display = 'none';
         replyIndicator.setAttribute('aria-hidden', 'true');
         replyIndicatorText.textContent = '';
+        updateFormatButtons();
         await enforceRetention();
       } catch (err) {
         alert("Failed to send message: " + err.message);
@@ -2006,11 +2101,6 @@
       replyIndicator.style.display = 'none';
       replyIndicator.setAttribute('aria-hidden', 'true');
       replyIndicatorText.textContent = '';
-    });
-
-    // when the chatWithSelect changes, re-render visible messages
-    chatWithSelect.addEventListener('change', () => {
-      renderMessages(lastMessages);
     });
 
     // clear button state & handler (admin only).
@@ -2042,7 +2132,7 @@
       }
     });
 
-    // Emoji picker setup
+    // Emoji picker setup for contenteditable insertion
     const emojis = ["😀","😃","😄","😁","😆","😅","😂","🙂","😉","😊","😍","😎","🤔","🙏","👍","👀","🎉","🔥","💀","😭","😜","🤩","😇","🤖","🫶","😴","🤝","👏","🤷","🙌","💯","✨"];
     emojis.forEach(e => {
       const b = document.createElement('button');
@@ -2067,14 +2157,36 @@
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') emojiPicker.style.display = 'none'; });
 
-    function insertEmojiAtCursor(textarea, emoji) {
-      const start = textarea.selectionStart || 0;
-      const end = textarea.selectionEnd || 0;
-      const val = textarea.value;
-      textarea.value = val.slice(0, start) + emoji + val.slice(end);
-      const pos = start + emoji.length;
-      textarea.selectionStart = textarea.selectionEnd = pos;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    function insertEmojiAtCursor(editableDiv, emoji) {
+      // Insert emoji at caret position in contenteditable
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) {
+        editableDiv.focus();
+        editableDiv.appendChild(document.createTextNode(emoji));
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      // Ensure the range is inside the editableDiv
+      let node = range.commonAncestorContainer;
+      let inside = false;
+      while (node) {
+        if (node === editableDiv) { inside = true; break; }
+        node = node.parentNode;
+      }
+      if (!inside) {
+        editableDiv.focus();
+        editableDiv.appendChild(document.createTextNode(emoji));
+        return;
+      }
+      // Insert the emoji as text node
+      const textNode = document.createTextNode(emoji);
+      range.deleteContents();
+      range.insertNode(textNode);
+      // Move caret after inserted node
+      range.setStartAfter(textNode);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
 
     // How modal handlers
@@ -2092,10 +2204,9 @@
       splitTop.style.display = '';
       splitBottom.style.display = '';
 
-      // START: ensure login overlay and account buttons are visible on initial load
+      // ensure login overlay and account buttons are visible on initial load
       loginOverlay.style.display = 'flex';
       accountButtons.style.visibility = 'visible';
-      // END
 
       requestAnimationFrame(() => {
         loginCard.classList.add('scale-in');
