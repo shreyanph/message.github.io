@@ -43,21 +43,34 @@
       color: #fff;
     }
 
-    /* Create Server button (to the right of How To Use) - blue like Change Password */
-    #createServerMainBtn {
+    /* Left DM panel (slightly to the left of How To Use) */
+    #dmPanel {
       position: fixed;
       top: 12px;
-      left: 120px; /* placed to the direct right of How To Use */
-      z-index: 5000;
-      background: rgba(30,144,255,0.95); /* blue - same as Change Password */
-      border: 1px solid rgba(255,255,255,0.15);
-      padding: 6px 10px;
+      left: -170px; /* slightly to the left of the How To Use button */
+      width: 160px;
+      z-index: 5002;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 8px;
       border-radius: 6px;
-      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
       color: #fff;
-      display: inline-block;
-      cursor: pointer;
     }
+    .dm-acc-btn {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+    }
+    .dm-acc-btn:hover { background: rgba(255,255,255,0.06); }
 
     /* SIGN OUT button (top-right of screen) - red background requested */
     #signOutBtn {
@@ -653,59 +666,32 @@
       margin-top: 10px;
     }
 
-    /* layout for From / Chatting With rows */
-    .from-row, .chat-with-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .from-row label, .chat-with-row label {
-      white-space: nowrap;
-      font-weight: 600;
-      color: #fff;
-    }
-    .from-row select, .chat-with-row select {
-      min-width: 220px;
-    }
-
-    /* Server modal */
-    .server-backdrop {
+    /* DM confirm modal styling (reusing how-modal look) */
+    .dm-backdrop {
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 7000;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.5);
+      z-index: 6500;
       align-items: center;
       justify-content: center;
     }
-    .server-modal {
-      width: 420px;
-      background: rgba(0,0,0,0.95);
+    .dm-modal {
+      width: 360px;
+      background: rgba(0,0,0,0.9);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 8px;
       padding: 14px;
       color: #fff;
       box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-      display:flex;
-      flex-direction:column;
-      gap:12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
     }
-    .server-modal .members-list { max-height: 220px; overflow:auto; border: 1px solid rgba(255,255,255,0.06); padding:8px; border-radius:6px; }
-    .server-modal .member-row { display:flex; align-items:center; gap:8px; padding:6px 4px; }
-
-    .create-server-btn {
-      background: rgba(0,0,0,0.95);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.06);
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: not-allowed;
-    }
-    .create-server-btn.enabled {
-      background: rgba(0,180,0,0.95);
-      cursor: pointer;
-    }
+    .dm-modal .dm-actions { display:flex; gap:12px; width:100%; justify-content:center; }
+    .dm-yes { background: rgba(0,180,0,0.95); border: none; color:#fff; padding:8px 14px; border-radius:6px; cursor:pointer; }
+    .dm-no  { background: rgba(220,20,60,0.95); border: none; color:#fff; padding:8px 14px; border-radius:6px; cursor:pointer; }
 
     @media (max-width: 640px) {
       .page-inner { margin: 20px; max-width: 100%; }
@@ -717,8 +703,8 @@
       #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
       .replies-wrapper { margin-left: 32px; padding-left: 10px; }
-      .from-row select, .chat-with-row select { min-width: 140px; }
-      .server-modal { width: 92%; }
+      #dmPanel { left: -140px; width: 140px; }
+      .dm-modal { width: 92%; }
     }
   </style>
 </head>
@@ -777,15 +763,16 @@
     </div>
   </div>
 
+  <!-- Left DM panel (accounts except Administrator) -->
+  <div id="dmPanel" aria-hidden="true"></div>
+
   <div class="page-inner">
     <!-- How To Use button -->
     <button id="howBtn">How To Use</button>
-    <!-- Create Server main button -->
-    <button id="createServerMainBtn">Create Server</button>
 
     <!-- Admin panel (centered) -->
     <div id="adminPanel" aria-hidden="true">
-      <h4>Accounts (cloud)</h4>
+      <h4>Accounts</h4>
       <div style="display:flex; gap:8px;">
         <input id="newAccountInput" placeholder="New account name" style="flex:1; padding:6px;" />
         <button id="addAccountBtn" style="padding:6px 8px;">Add</button>
@@ -793,26 +780,22 @@
       <ul id="accountsList" aria-live="polite"></ul>
     </div>
 
+    <!-- Server panel (Administrator only) -->
+    <div id="serverPanel" aria-hidden="true" style="display:none; margin-top:12px;">
+      <h4>Servers</h4>
+      <div style="display:flex; gap:8px;">
+        <input id="newServerInput" placeholder="New server name" style="flex:1; padding:6px;" />
+        <button id="addServerBtn" style="padding:6px 8px;">Add</button>
+      </div>
+      <ul id="serversList" aria-live="polite"></ul>
+    </div>
+
     <h2 style="margin-top:6px;">Message Board</h2>
 
-    <!-- FROM row: exact text "From: " to the left of the select -->
-    <div class="from-row" aria-hidden="false">
-      <label for="nameSelect">From:</label>
-      <select id="nameSelect" required>
-        <option value="" disabled selected>Select a name</option>
-      </select>
-    </div>
-
-    <!-- Chatting With dropdown (all accounts + Main Server default + servers) -->
-    <div class="chat-with-row">
-      <label for="chatWithSelect">Chatting With:</label>
-      <select id="chatWithSelect" required>
-        <option value="Main Server" selected>Main Server</option>
-        <!-- accounts & servers appended dynamically -->
-      </select>
-    </div>
-
-    <br>
+    <select id="nameSelect" required>
+      <option value="" disabled selected>Select a name</option>
+    </select>
+    <br><br>
 
     <!-- emoji-row: textarea + emoji button on same row -->
     <div class="emoji-row" id="emojiRow" style="position:relative;">
@@ -866,23 +849,13 @@
     </div>
   </div>
 
-  <!-- Server create modal -->
-  <div id="serverBackdrop" class="server-backdrop" role="dialog" aria-modal="true">
-    <div class="server-modal" role="document">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <strong style="font-size:16px;">Create Server</strong>
-        <button id="closeServerModal" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>
-      </div>
-      <div>
-        <label for="serverNameInput" style="font-weight:600;">Server name</label>
-        <input id="serverNameInput" placeholder="e.g. Project X" />
-      </div>
-      <div>
-        <label style="font-weight:600;">Include members</label>
-        <div class="members-list" id="membersList"></div>
-      </div>
-      <div style="display:flex; gap:8px; justify-content:flex-end;">
-        <button id="createServerBtn" class="create-server-btn" disabled>Create Server</button>
+  <!-- DM confirm modal -->
+  <div id="dmBackdrop" class="dm-backdrop" role="dialog" aria-modal="true">
+    <div class="dm-modal" role="document">
+      <div id="dmModalText" style="font-size:1em; text-align:center;"></div>
+      <div class="dm-actions">
+        <button id="dmYesBtn" class="dm-yes">Yes</button>
+        <button id="dmNoBtn" class="dm-no">No</button>
       </div>
     </div>
   </div>
@@ -933,7 +906,6 @@
 
     // DOM refs
     const nameSelect = document.getElementById('nameSelect');
-    const chatWithSelect = document.getElementById('chatWithSelect');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     const deleteCurrentBtn = document.getElementById('deleteCurrentBtn');
@@ -1003,13 +975,12 @@
     const replyIndicatorText = document.getElementById('replyIndicatorText');
     const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
-    // Server UI refs
-    const createServerMainBtn = document.getElementById('createServerMainBtn');
-    const serverBackdrop = document.getElementById('serverBackdrop');
-    const closeServerModal = document.getElementById('closeServerModal');
-    const serverNameInput = document.getElementById('serverNameInput');
-    const membersList = document.getElementById('membersList');
-    const createServerBtn = document.getElementById('createServerBtn');
+    // DM UI refs
+    const dmPanel = document.getElementById('dmPanel');
+    const dmBackdrop = document.getElementById('dmBackdrop');
+    const dmModalText = document.getElementById('dmModalText');
+    const dmYesBtn = document.getElementById('dmYesBtn');
+    const dmNoBtn = document.getElementById('dmNoBtn');
 
     // hide page until login
     pageInner.style.display = 'none';
@@ -1017,20 +988,12 @@
     // cloud refs
     const accountsDocRef = doc(db, 'meta', 'accounts');
     const passwordsDocRef = doc(db, 'meta', 'passwords');
-    const serversDocRef = doc(db, 'meta', 'servers');
     const ADMIN_NAME = 'Administrator';
 
     // remember last messages so we can re-render after login
     let lastMessages = [];
     // If admin is changing another user's password, this stores the target account.
     let pwChangeTarget = null;
-
-    // reply target state
-    let replyTargetId = null;
-    let replyTargetName = null;
-
-    // servers map (local cache)
-    let serversMap = {}; // { serverName: [member1, member2, ...], ... }
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -1040,6 +1003,108 @@
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
+
+    const serversDocRef = doc(db, 'meta', 'servers');
+
+    // ensure Main Server exists in cloud
+    (async function ensureMainServerPresent() {
+      try {
+        const snap = await getDoc(serversDocRef);
+        if (!snap.exists()) {
+          await setDoc(serversDocRef, { list: ['Main Server'] });
+        } else {
+          const data = snap.data();
+          const list = Array.isArray(data?.list) ? data.list : [];
+          if (!list.includes('Main Server')) {
+            const updated = ['Main Server', ...list];
+            await setDoc(serversDocRef, { list: updated }, { merge: true });
+          }
+        }
+      } catch (err) {
+        console.warn("Could not ensure Main Server present:", err?.message);
+      }
+    })();
+
+    // realtime servers listener -> populates servers panel (admin only)
+    onSnapshot(serversDocRef, snap => {
+      const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+      populateServers(list);
+    }, err => {
+      console.error('Servers listener error:', err);
+      populateServers([]);
+    });
+
+    function populateServers(list) {
+      const serversListEl = document.getElementById('serversList');
+      serversListEl.innerHTML = '';
+      const finalList = Array.isArray(list) ? list.slice() : [];
+      // ensure Main Server first
+      if (!finalList.includes('Main Server')) finalList.unshift('Main Server');
+      const seen = new Set();
+      for (const name of finalList) {
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        const li = document.createElement('li');
+        const label = document.createElement('span');
+        label.textContent = name;
+
+        const actionsRight = document.createElement('div');
+        actionsRight.style.display = 'flex';
+        actionsRight.style.gap = '8px';
+        actionsRight.style.alignItems = 'center';
+
+        // No "Change Password" button for servers; only delete (except Main Server)
+        if (name === 'Main Server') {
+          const rm = document.createElement('button');
+          rm.className = 'remove-account disabled';
+          rm.textContent = 'Remove';
+          rm.disabled = true;
+          actionsRight.appendChild(rm);
+        } else {
+          const rm = document.createElement('button');
+          rm.className = 'remove-account';
+          rm.textContent = 'Remove';
+          rm.addEventListener('click', async () => {
+            if (!confirm(`Remove server \"${name}\"?`)) return;
+            try {
+              const snap = await getDoc(serversDocRef);
+              const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+              const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
+              if (!filtered.includes('Main Server')) filtered.unshift('Main Server');
+              await setDoc(serversDocRef, { list: filtered }, { merge: true });
+            } catch (err) {
+              alert('Failed to remove server: ' + err.message);
+            }
+          });
+          actionsRight.appendChild(rm);
+        }
+
+        li.appendChild(label);
+        li.appendChild(actionsRight);
+        serversListEl.appendChild(li);
+      }
+    }
+
+    // add server button handler (admin only)
+    const addServerBtn = document.getElementById('addServerBtn');
+    addServerBtn.addEventListener('click', async () => {
+      if (currentUser !== ADMIN_NAME) { alert('Only Administrator may add servers.'); return; }
+      const v = (document.getElementById('newServerInput').value || '').trim();
+      if (!v) return;
+      try {
+        const snap = await getDoc(serversDocRef);
+        const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+        if (existing.includes(v)) {
+          alert('Server already exists.');
+          return;
+        }
+        const updated = existing.includes('Main Server') ? [...existing, v] : ['Main Server', ...existing, v];
+        await setDoc(serversDocRef, { list: updated }, { merge: true });
+        document.getElementById('newServerInput').value = '';
+      } catch (err) {
+        alert('Failed to add server: ' + err.message);
+      }
+    });
 
     // ensure Administrator exists in cloud (if possible)
     (async function ensureAdminPresent() {
@@ -1060,25 +1125,13 @@
       }
     })();
 
-    // realtime accounts listener -> populates login overlay and admin panel & nameSelect & chatWithSelect
+    // realtime accounts listener -> populates login overlay and admin panel & nameSelect & DM panel
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
       populateAccounts(list);
     }, err => {
       console.error('Accounts listener error:', err);
       populateAccounts([]);
-    });
-
-    // listen for servers changes
-    onSnapshot(serversDocRef, snap => {
-      const data = snap.exists() ? (snap.data().map || {}) : {};
-      serversMap = Object.assign({}, data);
-      // refresh chat-with options to include servers appropriately
-      refreshChatWithOptions();
-    }, err => {
-      console.warn('Servers listener error:', err);
-      serversMap = {};
-      refreshChatWithOptions();
     });
 
     function populateAccounts(list) {
@@ -1181,7 +1234,7 @@
         });
       }
 
-      // populate nameSelect (From:)
+      // populate nameSelect
       nameSelect.innerHTML = "";
       const placeholder = document.createElement('option');
       placeholder.value = "";
@@ -1201,11 +1254,35 @@
         opt.textContent = n;
         nameSelect.appendChild(opt);
       }
-
-      // refresh chatWith options (includes Main Server, servers, accounts but excludes currentUser)
-      refreshChatWithOptions();
-
       updateClearButtonState();
+
+      // populate DM panel with accounts except Administrator
+      dmPanel.innerHTML = '';
+      if (Array.isArray(list)) {
+        for (const nm of finalList) {
+          if (!nm || nm === ADMIN_NAME) continue;
+          const b = document.createElement('button');
+          b.className = 'dm-acc-btn';
+          b.type = 'button';
+          b.textContent = nm;
+          b.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            // require signed in to create a DM
+            if (!currentUser) {
+              alert('Sign in first to create a DM.');
+              return;
+            }
+            pendingDMTarget = nm;
+            dmModalText.textContent = `Create DM with ${nm}?`;
+            dmBackdrop.style.display = 'flex';
+          });
+          dmPanel.appendChild(b);
+        }
+        // make sure the panel is visible when accounts exist
+        dmPanel.style.display = finalList.length > 1 ? 'flex' : 'none';
+      } else {
+        dmPanel.style.display = 'none';
+      }
 
       // If the login overlay is visible, play the split-open reveal animation for account list
       if (loginOverlay.style.display !== 'none' && accountButtons.style.visibility !== 'hidden') {
@@ -1454,6 +1531,16 @@
         adminPanel.setAttribute('aria-hidden', 'true');
       }
 
+      // Show/hide server panel for Administrator (same visibility rules as adminPanel)
+      var serverPanelEl = document.getElementById('serverPanel');
+      if (currentUser === ADMIN_NAME) {
+        serverPanelEl.style.display = 'block';
+        serverPanelEl.setAttribute('aria-hidden', 'false');
+      } else {
+        serverPanelEl.style.display = 'none';
+        serverPanelEl.setAttribute('aria-hidden', 'true');
+      }
+
       if (currentUser === ADMIN_NAME) {
         let found = false;
         for (let i = 0; i < nameSelect.options.length; i++) {
@@ -1508,9 +1595,6 @@
 
       updateClearButtonState();
 
-      // refresh chat-with options to remove currentUser as a choice (can't DM yourself)
-      refreshChatWithOptions();
-
       // re-render messages so action buttons update to match currentUser
       renderMessages(lastMessages);
     }
@@ -1554,6 +1638,9 @@
 
       // fold admin panel when signing out
       hideAdminPanel();
+
+      // exit DM mode on sign out
+      dmModeTarget = null;
 
       setTimeout(() => {
         pageInner.style.display = 'none';
@@ -1682,35 +1769,26 @@
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      // Determine current chat context from chatWithSelect
-      const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
-
-      // Filter messages depending on Chatting With:
-      // - If chatWith == "Main Server": show only public messages (dmTarget == null)
-      // - Else if chatWith matches a server name: show messages with dmTarget == serverName only if currentUser is member
-      // - Else (chatWith is an account): show messages that are DMs between currentUser and chatWith
+      // Filter messages depending on DM mode:
+      // - If not in DM mode: show only public messages (dmTarget == null)
+      // - If in DM mode: show only messages that are DMs between currentUser and dmModeTarget
       let visibleMessages = [];
-      if (chatWith === "Main Server") {
+      if (!dmModeTarget) {
         visibleMessages = messages.filter(m => !m.dmTarget);
-      } else if (serversMap && Object.prototype.hasOwnProperty.call(serversMap, chatWith)) {
-        // chatWith is a server
-        const members = Array.isArray(serversMap[chatWith]) ? serversMap[chatWith] : [];
-        if (!currentUser || !members.includes(currentUser)) {
-          // not a member: show nothing
-          visibleMessages = [];
-        } else {
-          visibleMessages = messages.filter(m => m.dmTarget === chatWith);
-        }
       } else {
-        // chatWith is a single-account DM
         if (!currentUser) {
+          // no signed in user -> nothing to show in DM mode
           visibleMessages = [];
         } else {
           visibleMessages = messages.filter(m => {
             if (!m.dmTarget) return false;
+            // m.dmTarget is the recipient of the DM (the "other" or the target)
+            // We show message when:
+            //   - message sent by currentUser to dmModeTarget
+            //   - message sent by dmModeTarget to currentUser
             const sentBy = (m.name || "");
             const t = m.dmTarget;
-            return (t === chatWith && sentBy === currentUser) || (t === currentUser && sentBy === chatWith);
+            return (t === dmModeTarget && sentBy === currentUser) || (t === currentUser && sentBy === dmModeTarget);
           });
         }
       }
@@ -2078,13 +2156,10 @@
         // include parentId when replying
         const payload = { name: sendName, text, time: serverTimestamp() };
         if (replyTargetId) payload.parentId = replyTargetId;
-
-        // Use Chatting With dropdown to decide if this is a DM, group, or main server message
-        const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
-        if (chatWith && chatWith !== "Main Server") {
-          payload.dmTarget = chatWith; // works for single-account DMs and servers (group)
+        // If DM mode active, add dmTarget to the payload
+        if (dmModeTarget) {
+          payload.dmTarget = dmModeTarget;
         }
-
         await addDoc(collection(db, 'messages'), payload);
         messageInput.value = "";
         // clear reply state after send
@@ -2108,9 +2183,23 @@
       replyIndicatorText.textContent = '';
     });
 
-    // when the chatWithSelect changes, re-render visible messages
-    chatWithSelect.addEventListener('change', () => {
+    // DM modal handlers
+    dmNoBtn.addEventListener('click', () => {
+      pendingDMTarget = null;
+      dmBackdrop.style.display = 'none';
+    });
+    dmYesBtn.addEventListener('click', () => {
+      if (!pendingDMTarget) {
+        dmBackdrop.style.display = 'none';
+        return;
+      }
+      // create DM with pendingDMTarget
+      dmModeTarget = pendingDMTarget;
+      pendingDMTarget = null;
+      dmBackdrop.style.display = 'none';
+      // re-render messages to show DM conversation only
       renderMessages(lastMessages);
+      alert(`DM with ${dmModeTarget} created. Messages you send will go only to ${dmModeTarget} until you sign out or refresh.`);
     });
 
     // clear button state & handler (admin only).
@@ -2204,145 +2293,6 @@
       // ensure admin panel starts hidden (in case CSS transitions toggle)
       adminPanel.style.display = 'none';
     })();
-
-    // --------------------- Server creation UI logic ---------------------
-    createServerMainBtn.addEventListener('click', async () => {
-      // show modal
-      serverBackdrop.style.display = 'flex';
-      serverNameInput.value = '';
-      membersList.innerHTML = '';
-
-      // load accounts to populate members list (live)
-      try {
-        const snap = await getDoc(accountsDocRef);
-        const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-        const finalList = Array.isArray(list) ? list.slice() : [];
-        if (!finalList.includes(ADMIN_NAME)) finalList.unshift(ADMIN_NAME);
-        const seen = new Set();
-        for (const name of finalList) {
-          if (!name || seen.has(name)) continue;
-          seen.add(name);
-          const row = document.createElement('div');
-          row.className = 'member-row';
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.dataset.name = name;
-          const lab = document.createElement('label');
-          lab.textContent = name;
-          row.appendChild(cb);
-          row.appendChild(lab);
-          membersList.appendChild(row);
-          cb.addEventListener('change', checkServerFormValidity);
-        }
-      } catch (err) {
-        membersList.textContent = 'Failed to load accounts';
-      }
-      serverNameInput.addEventListener('input', checkServerFormValidity);
-      checkServerFormValidity();
-    });
-
-    closeServerModal.addEventListener('click', () => {
-      serverBackdrop.style.display = 'none';
-    });
-
-    function checkServerFormValidity() {
-      const name = (serverNameInput.value || '').trim();
-      const cbs = membersList.querySelectorAll('input[type="checkbox"]');
-      let selected = 0;
-      cbs.forEach(cb => { if (cb.checked) selected++; });
-      if (name.length > 0 && selected > 0) {
-        createServerBtn.disabled = false;
-        createServerBtn.classList.add('enabled');
-        createServerBtn.classList.remove('create-server-btn');
-      } else {
-        createServerBtn.disabled = true;
-        createServerBtn.classList.remove('enabled');
-        createServerBtn.classList.add('create-server-btn');
-      }
-    }
-
-    createServerBtn.addEventListener('click', async () => {
-      if (createServerBtn.disabled) return;
-      const name = (serverNameInput.value || '').trim();
-      if (!name) return alert('Enter a server name.');
-      const cbs = membersList.querySelectorAll('input[type="checkbox"]');
-      const members = [];
-      cbs.forEach(cb => { if (cb.checked) members.push(cb.dataset.name); });
-      if (members.length === 0) return alert('Select at least one member.');
-
-      try {
-        // write to meta/servers: map: { serverName: membersArray }
-        const snap = await getDoc(serversDocRef);
-        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-        existing[name] = members;
-        await setDoc(serversDocRef, { map: existing }, { merge: true });
-        serverBackdrop.style.display = 'none';
-        // refresh options will run automatically because of servers onSnapshot listener
-        alert(`Server "${name}" created.`);
-      } catch (err) {
-        alert('Failed to create server: ' + (err.message || err));
-      }
-    });
-
-    // --------------------- Helper to refresh Chatting With dropdown ---------------------
-    function refreshChatWithOptions() {
-      // Keep "Main Server" first
-      const existingAccountsSnap = Array.from(nameSelect.querySelectorAll('option')).map(o => o.value).filter(v => v && v !== "");
-      // We'll rebuild chatWithSelect to include Main Server, then server names (only those relevant), then accounts (excluding currentUser)
-      chatWithSelect.innerHTML = "";
-      const mainOpt = document.createElement('option');
-      mainOpt.value = "Main Server";
-      mainOpt.textContent = "Main Server";
-      mainOpt.selected = true;
-      chatWithSelect.appendChild(mainOpt);
-
-      // Add servers for which currentUser is member (or always show them but selection will hide messages if not a member)
-      const serverNames = Object.keys(serversMap || {});
-      for (const s of serverNames) {
-        // show server as option only if currentUser is member (or allow admins?) — user requested that members can select; so show server only when currentUser is member
-        const members = Array.isArray(serversMap[s]) ? serversMap[s] : [];
-        if (!currentUser || members.includes(currentUser)) {
-          const opt = document.createElement('option');
-          opt.value = s;
-          opt.textContent = s;
-          chatWithSelect.appendChild(opt);
-        }
-      }
-
-      // Add accounts (exclude currentUser so you cannot DM yourself)
-      // We'll read accounts from accountsDocRef snapshot items in the nameSelect options if available,
-      // but safer to query accountsDocRef (but to avoid extra requests use the current DOM options in nameSelect).
-      const accountValues = [];
-      for (let i = 0; i < nameSelect.options.length; i++) {
-        const v = nameSelect.options[i].value;
-        if (!v) continue;
-        accountValues.push(v);
-      }
-      const seen = new Set();
-      for (const n of accountValues) {
-        if (!n || seen.has(n)) continue;
-        seen.add(n);
-        // skip currentUser so you cannot DM yourself
-        if (currentUser && n === currentUser) continue;
-        // don't add Main Server or duplicates
-        if (n === "Main Server") continue;
-        const opt = document.createElement('option');
-        opt.value = n;
-        opt.textContent = n;
-        chatWithSelect.appendChild(opt);
-      }
-    }
-
-    // --------------------- Remaining existing logic (unchanged) ---------------------
-
-    // cancel reply button handler (already wired above)
-    // clear button state & handler already defined above
-
-    // Emoji & How modal wiring already defined above
-
-    // init: ensure chatWithSelect is refreshed on load
-    refreshChatWithOptions();
-
   </script>
 </body>
 </html>
