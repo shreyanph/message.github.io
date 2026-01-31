@@ -12,7 +12,7 @@
       margin: 0;
       color: #ffffff;
       background-image: url("https://scx1.b-cdn.net/csz/news/800a/2023/data-science.jpg");
-      background-size: 115% auto; /* slightly zoomed to remove white edges */
+      background-size: 115% auto;
       background-position: center;
       background-repeat: no-repeat;
       position: relative;
@@ -21,21 +21,21 @@
     /* main page inner (center column) */
     .page-inner {
       position: relative;
-      max-width: 600px;
-      margin: 40px auto;
+      max-width: 640px;
+      margin: 40px auto 120px; /* bottom margin to make room for fixed composer */
       padding: 12px;
       box-sizing: border-box;
       transition: opacity 420ms ease, transform 420ms ease;
     }
     .page-inner.fade-out { opacity: 0; transform: scale(0.995); pointer-events: none; }
 
-    /* How To Use button (moved to fixed left, same Y as Sign Out) - ORANGE */
+    /* How To Use button (fixed left top) */
     #howBtn {
       position: fixed;
       top: 12px;
       left: 12px;
       z-index: 5000;
-      background: rgba(255,165,0,0.95); /* orange */
+      background: rgba(255,165,0,0.95);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
       border-radius: 6px;
@@ -43,45 +43,29 @@
       color: #fff;
     }
 
-    /* Create Server button (to the right of How To Use) - blue like Change Password */
-    #createServerMainBtn {
-      position: fixed;
-      top: 12px;
-      left: 120px; /* placed to the direct right of How To Use */
-      z-index: 5000;
-      background: rgba(30,144,255,0.95); /* blue - same as Change Password */
-      border: 1px solid rgba(255,255,255,0.15);
-      padding: 6px 10px;
-      border-radius: 6px;
-      pointer-events: auto;
-      color: #fff;
-      display: inline-block;
-      cursor: pointer;
-    }
-
-    /* SIGN OUT button (top-right of screen) - red background requested */
+    /* SIGN OUT button (top-right of screen) - red background */
     #signOutBtn {
       position: fixed;
       top: 12px;
       right: 12px;
-      z-index: 5001; /* high so it shows above overlays */
-      background: rgba(220,20,60,0.95); /* red background */
+      z-index: 5001;
+      background: rgba(220,20,60,0.95);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
       border-radius: 6px;
       color: #fff;
       cursor: pointer;
-      display: none; /* shown only when signed in */
+      display: none;
       transition: opacity 300ms ease;
     }
 
-    /* Change Password button (placed left of Sign Out) - BLUE */
+    /* Change Password button (left of Sign Out) - BLUE */
     #changePwBtn {
       position: fixed;
       top: 12px;
-      right: 96px; /* sits just left of sign out */
+      right: 96px;
       z-index: 5001;
-      background: rgba(30,144,255,0.95); /* blue */
+      background: rgba(30,144,255,0.95);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
       border-radius: 6px;
@@ -102,7 +86,6 @@
     }
     textarea { height: 80px; resize: vertical; }
 
-    /* input error border for password input */
     input.input-error {
       border: 2px solid rgba(220,20,60,0.95) !important;
       outline: none;
@@ -119,12 +102,15 @@
       cursor: pointer;
     }
 
-    /* messages container: vertical stack */
+    /* messages container: vertical stack and scrollable */
     #messages {
       margin-top: 10px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      overflow: auto;
+      max-height: calc(100vh - 360px); /* leaves room for top UI + fixed composer */
+      padding-bottom: 12px;
     }
 
     /* message row wrapper (message + actions) */
@@ -184,28 +170,23 @@
       background: rgba(220,20,60,0.95);
       color: #fff;
     }
-    /* EDIT button: blue */
     .icon-btn.pencil {
-      background: rgba(30,144,255,0.95); /* DodgerBlue */
+      background: rgba(30,144,255,0.95);
       color: #fff;
     }
 
-    /* REPLY button: orange with white arrow */
     .icon-btn.reply-btn {
-      background: rgba(255,165,0,0.95); /* orange */
+      background: rgba(255,165,0,0.95);
       color: #fff;
       font-weight: 700;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-size: 18px;
-
-      /* default hidden; will appear on hover */
       opacity: 0;
       pointer-events: none;
       transition: opacity 120ms ease;
     }
-    /* show reply button on hover/focus within of message-row */
     .message-row:hover .icon-btn.reply-btn,
     .message-row:focus-within .icon-btn.reply-btn {
       opacity: 1;
@@ -219,7 +200,6 @@
 
     #messages, input, textarea, select { backdrop-filter: blur(2px); }
 
-    /* Timestamp row */
     .timestamp-row {
       display: flex;
       align-items: center;
@@ -237,81 +217,25 @@
       font-size: 0.95em;
     }
 
-    /* Login overlay */
-    #loginOverlay {
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 3000;
-      background: rgba(0,0,0,0.55);
-    }
-
-    .login-card {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      background: rgba(0,0,0,0.65);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 26px 28px;
-      border-radius: 12px;
-      min-width: 320px;
-      min-height: 460px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-      overflow: hidden;
-      transform-origin: center center;
-      opacity: 1;
-      /* START EDIT: make the lock-screen panel expand from the middle (scale from center) */
-      transform: scaleY(0);
-      transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease;
-      /* END EDIT */
-    }
+    #loginOverlay { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; z-index: 3000; background: rgba(0,0,0,0.55); }
+    .login-card { position: relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.12); padding: 26px 28px; border-radius: 12px; min-width: 320px; min-height: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); overflow: hidden; transform-origin: center center; opacity: 1; transform: scaleY(0); transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease; }
     .login-card.scale-in { transform: scaleY(1); }
-
-    /* split overlays (keeps existing center-out animation intact) */
-    .split-top, .split-bottom {
-      position: absolute;
-      left: 0;
-      right: 0;
-      background: rgba(0,0,0,0.76);
-      z-index: 2500;
-      transition: transform 3s cubic-bezier(.2,.9,.2,1);
-      pointer-events: none;
-    }
+    .split-top, .split-bottom { position: absolute; left: 0; right: 0; background: rgba(0,0,0,0.76); z-index: 2500; transition: transform 3s cubic-bezier(.2,.9,.2,1); pointer-events: none; }
     .split-top { top: 0; height: 50%; transform: translateY(0); }
     .split-bottom { bottom: 0; height: 50%; transform: translateY(0); }
     .login-card.split-open .split-top { transform: translateY(-120%); }
     .login-card.split-open .split-bottom { transform: translateY(120%); }
 
-    .avatar {
-      width: 112px; height: 112px; border-radius: 50%;
-      background: rgba(255,255,255,0.06);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 48px; color: #fff; border: 2px solid rgba(255,255,255,0.06);
-    }
+    .avatar { width: 112px; height: 112px; border-radius: 50%; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 48px; color: #fff; border: 2px solid rgba(255,255,255,0.06); }
     .login-title { font-size: 18px; color: #fff; opacity: 0.95; }
-    .account-btn {
-      width: 260px; display: flex; align-items: center; gap: 12px;
-      padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 16px;
-      transition: opacity 300ms ease, transform 300ms ease;
-    }
+    .account-btn { width: 260px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 16px; transition: opacity 300ms ease, transform 300ms ease; }
     .account-btn:hover { background: rgba(255,255,255,0.06); }
 
-    /* ---------- REVERTED PASSWORD AREA CSS (from the snippet you provided) ---------- */
-    /* Password area: simple, no show/fade classes */
+    /* Password area */
     #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
     #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
 
-    /* Admin panel (centered) -- updated to animate open/close (unfold) */
-    /* servers panel shares same visual style as adminPanel */
+    /* Admin panel & Servers panel */
     #adminPanel, #serversPanel {
       margin: 8px auto 16px auto;
       z-index: 500;
@@ -322,10 +246,8 @@
       width: 100%;
       max-width: 520px;
       color: #fff;
-
-      /* folding animation base */
       overflow: hidden;
-      max-height: 0;                   /* collapsed */
+      max-height: 0;
       opacity: 0;
       transform-origin: top center;
       transform: scaleY(0.98);
@@ -335,9 +257,8 @@
         transform 420ms cubic-bezier(.2,.9,.2,1);
       pointer-events: none;
     }
-    /* when open, allow interactions and expand */
     #adminPanel.panel-open, #serversPanel.panel-open {
-      max-height: 520px;               /* large enough for content (adjust if needed) */
+      max-height: 520px;
       opacity: 1;
       transform: scaleY(1);
       pointer-events: auto;
@@ -350,7 +271,6 @@
     #serversList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
     #serversList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
 
-    /* Remove button in admin panel: red background */
     .remove-account {
       background: rgba(220,20,60,0.95);
       border: none;
@@ -366,7 +286,6 @@
       color: #fff;
     }
 
-    /* style for admin "Change Password" small button in accounts list (kept blue) */
     .change-account-pw {
       background: rgba(30,144,255,0.95);
       border: none;
@@ -377,9 +296,8 @@
       margin-right: 6px;
     }
 
-    /* Add button should be green */
     #addAccountBtn {
-      background: rgba(0,180,0,0.95); /* green */
+      background: rgba(0,180,0,0.95);
       border: none;
       color: #fff;
       padding: 6px 8px;
@@ -387,7 +305,6 @@
       cursor: pointer;
     }
 
-    /* Clear message history button should be red */
     #clearBtn {
       background: rgba(220,20,60,0.95);
       border: none;
@@ -398,7 +315,6 @@
       margin-top: 8px;
     }
 
-    /* Emoji row: ensure textarea and button are in same row */
     .emoji-row {
       display: flex;
       gap: 8px;
@@ -430,7 +346,6 @@
     .emoji-btn { background: transparent; border: none; font-size: 20px; padding: 6px; cursor: pointer; border-radius: 6px; color: #fff; }
     .emoji-btn:hover { background: rgba(255,255,255,0.06); }
 
-    /* inline edit UI inside message bubble */
     .edit-area {
       display:flex;
       gap:10px;
@@ -462,258 +377,78 @@
     .edit-area .icon-btn:hover { filter: brightness(1.12); }
     .edit-area .cancel-btn { margin-left: auto; }
 
-    /* Change Password modal */
-    .pw-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 6000;
-      background: rgba(0,0,0,0.6);
-      align-items: center;
-      justify-content: center;
-    }
-    .pw-modal {
-      background: rgba(0,0,0,0.9);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 12px;
-      border-radius: 10px;
-      color: #fff;
-      width: 320px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
+    .pw-backdrop { display: none; position: fixed; inset: 0; z-index: 6000; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+    .pw-modal { background: rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.12); padding: 12px; border-radius: 10px; color: #fff; width: 320px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:8px; }
     .pw-modal input { width:100%; padding:8px; box-sizing:border-box; color:#000; background:#fff; border-radius:6px; border: none; }
+    .pw-error { color: rgba(255,200,200,1); font-size: 0.9em; display: none; margin-bottom: 4px; }
 
-    /* small inline password error text */
-    .pw-error {
-      color: rgba(255,200,200,1);
-      font-size: 0.9em;
-      display: none;
-      margin-bottom: 4px;
-    }
-
-    button[disabled] { opacity: 0.45; cursor: not-allowed; }
-
-    /* How modal */
-    .how-modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .how-modal {
-      max-width: 560px;
-      width: 100%;
-      background: rgba(0,0,0,0.8);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 16px;
-      border-radius: 8px;
-      color: #fff;
-      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
-      position: relative;
-    }
+    .how-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+    .how-modal { max-width: 560px; width: 100%; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.12); padding: 16px; border-radius: 8px; color: #fff; box-shadow: 0 6px 30px rgba(0,0,0,0.6); position: relative; }
     .how-modal h3 { margin-top:0; }
     .how-modal .close { position: absolute; right: 8px; top: 8px; background: transparent; border: none; color: #fff; font-size: 18px; cursor: pointer; padding: 4px; }
 
-    /* BOOT overlay (logo + spinner) */
-    #bootOverlay {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 4000;
-      pointer-events: none;
-      background: transparent;
-    }
-    #bootBox {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18px;
-      background: transparent;
-      border-radius: 999px;
-      padding: 0;
-      transition: opacity 420ms ease, transform 420ms ease;
-      opacity: 0;
-      transform: scale(0.98);
-    }
+    #bootOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 4000; pointer-events: none; background: transparent; }
+    #bootBox { display: flex; flex-direction: column; align-items: center; gap: 18px; background: transparent; border-radius: 999px; padding: 0; transition: opacity 420ms ease, transform 420ms ease; opacity: 0; transform: scale(0.98); }
     #bootBox.show { opacity: 1; transform: scale(1); }
-    #bootLogoWrap {
-      width: 320px;
-      height: 320px;
-      border-radius: 50%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background: rgba(255,255,255,0.04);
-    }
-    #bootLogo {
-      width: 300px;
-      height: 300px;
-      object-fit: contain;
-      display:block;
-      border-radius: 12px;
-    }
-    .boot-spinner {
-      width: 96px;
-      height: 96px;
-      border-radius: 50%;
-      border: 10px solid rgba(255,255,255,0.12);
-      border-top-color: rgba(255,255,255,0.95);
-      animation: spin 1s linear infinite;
-      box-sizing: border-box;
-    }
+    #bootLogoWrap { width: 320px; height: 320px; border-radius: 50%; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.04); }
+    #bootLogo { width: 300px; height: 300px; object-fit: contain; display:block; border-radius: 12px; }
+    .boot-spinner { width: 96px; height: 96px; border-radius: 50%; border: 10px solid rgba(255,255,255,0.12); border-top-color: rgba(255,255,255,0.95); animation: spin 1s linear infinite; box-sizing: border-box; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .hidden { display: none !important; }
 
-    /* Reply block styles */
-    .replies-wrapper {
-      margin-left: 48px; /* indent replies */
-      margin-top: 8px;
-      border-left: 2px solid rgba(255,165,0,0.9); /* orange accent */
-      padding-left: 12px;
-      position: relative;
+    .replies-wrapper { margin-left: 48px; margin-top: 8px; border-left: 2px solid rgba(255,165,0,0.9); padding-left: 12px; position: relative; display: flex; flex-direction: column; gap: 8px; }
+    .replies-wrapper::before { content: ''; position: absolute; left: -12px; top: -10px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 12px solid rgba(255,165,0,0.95); }
+    .reply { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 8px 10px; color: #fff; font-size: 0.95em; word-wrap: break-word; }
+    .reply .r-name { font-weight:700; margin-right:8px; color:#fff; }
+
+    .reply-indicator { display: none; align-items: center; gap: 8px; color: #fff; padding: 6px 10px; border-radius: 8px; background: rgba(255,165,0,0.95); color: #ffffff; border: 1px solid rgba(255,165,0,0.95); margin: 8px 0; font-size: 0.95em; }
+    .reply-indicator .cancel-reply { background: rgba(220,20,60,0.95); border: none; color: #fff; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+
+    #sendBtn { background: rgba(0,180,0,0.95); border: none; color: #fff; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+    #deleteCurrentBtn { background: rgba(220,20,60,0.95); border: none; color: #fff; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-left: 8px; margin-top: 10px; }
+
+    .from-row, .chat-with-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .from-row label, .chat-with-row label { white-space: nowrap; font-weight: 600; color: #fff; }
+    .from-row select, .chat-with-row select { min-width: 220px; }
+
+    /* Server modal */
+    .server-backdrop { display: none; position: fixed; inset: 0; z-index: 7000; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+    .server-modal { width: 420px; background: rgba(0,0,0,0.95); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 14px; color: #fff; box-shadow: 0 8px 40px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:12px; }
+    .server-modal .members-list { max-height: 220px; overflow:auto; border: 1px solid rgba(255,255,255,0.06); padding:8px; border-radius:6px; }
+    .server-modal .member-row { display:flex; align-items:center; gap:8px; padding:6px 4px; }
+
+    .create-server-btn { background: rgba(0,0,0,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px; cursor: not-allowed; }
+    .create-server-btn.enabled { background: rgba(0,180,0,0.95); cursor: pointer; }
+
+    /* Composer fixed at bottom of viewport */
+    .composer {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6000;
+      width: min(640px, calc(100% - 32px));
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
-
-    /* small arrow connecting message -> replies; only visible when replies exist */
-    .replies-wrapper::before {
-      content: '';
-      position: absolute;
-      left: -12px;
-      top: -10px;
-      width: 0;
-      height: 0;
-      border-top: 8px solid transparent;
-      border-bottom: 8px solid transparent;
-      border-right: 12px solid rgba(255,165,0,0.95);
-    }
-
-    .reply {
-      background: rgba(255,255,255,0.04);
-      border-radius: 8px;
-      padding: 8px 10px;
-      color: #fff;
-      font-size: 0.95em;
-      word-wrap: break-word;
-    }
-    .reply .r-name { font-weight:700; margin-right:8px; color:#fff; }
-
-    /* Reply indicator above input (shown while composing a reply) */
-    .reply-indicator {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 8px;
-      /* START EDIT: orange background box for "Replying to X..." */
-      background: rgba(255,165,0,0.95);
-      color: #ffffff;
-      border: 1px solid rgba(255,165,0,0.95);
-      /* END EDIT */
-      margin: 8px 0;
-      font-size: 0.95em;
-    }
-    /* Cancel reply button - RED background per request */
-    .reply-indicator .cancel-reply {
-      background: rgba(220,20,60,0.95); /* red background */
-      border: none;
-      color: #fff;
-      padding: 6px 8px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    /* Send button - GREEN background per request */
-    #sendBtn {
-      background: rgba(0,180,0,0.95); /* green */
-      border: none;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    /* Delete Current Message button (red) */
-    #deleteCurrentBtn {
-      background: rgba(220,20,60,0.95); /* red */
-      border: none;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-left: 8px;
-      margin-top: 10px;
-    }
-
-    /* layout for From / Chatting With rows */
-    .from-row, .chat-with-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .from-row label, .chat-with-row label {
-      white-space: nowrap;
-      font-weight: 600;
-      color: #fff;
-    }
-    .from-row select, .chat-with-row select {
-      min-width: 220px;
-    }
-
-    /* Server modal */
-    .server-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 7000;
-      background: rgba(0,0,0,0.6);
-      align-items: center;
-      justify-content: center;
-    }
-    .server-modal {
-      width: 420px;
-      background: rgba(0,0,0,0.95);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
-      padding: 14px;
-      color: #fff;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    .composer-row {
       display:flex;
-      flex-direction:column;
-      gap:12px;
+      gap:8px;
+      align-items:center;
     }
-    .server-modal .members-list { max-height: 220px; overflow:auto; border: 1px solid rgba(255,255,255,0.06); padding:8px; border-radius:6px; }
-    .server-modal .member-row { display:flex; align-items:center; gap:8px; padding:6px 4px; }
-
-    .create-server-btn {
-      background: rgba(0,0,0,0.95);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.06);
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: not-allowed;
-    }
-    .create-server-btn.enabled {
-      background: rgba(0,180,0,0.95);
-      cursor: pointer;
-    }
+    .composer .emoji-row textarea { min-height: 52px; color: #fff; background: rgba(0,0,0,0.45); border-radius:8px; padding:8px; }
+    .composer .controls { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+    .composer .controls button { margin: 0; }
 
     @media (max-width: 640px) {
-      .page-inner { margin: 20px; max-width: 100%; }
+      .page-inner { margin: 20px 12px 160px; max-width: 100%; }
       .login-card { min-width: 260px; padding: 18px; min-height: 360px; }
       .account-btn { width: 220px; }
       #adminPanel { width: calc(100% - 32px); }
@@ -724,6 +459,8 @@
       .replies-wrapper { margin-left: 32px; padding-left: 10px; }
       .from-row select, .chat-with-row select { min-width: 140px; }
       .server-modal { width: 92%; }
+      .composer { left: 50%; transform: translateX(-50%); width: calc(100% - 24px); bottom: 12px; }
+      #messages { max-height: calc(100vh - 340px); }
     }
   </style>
 </head>
@@ -731,7 +468,6 @@
   <!-- LOGIN OVERLAY -->
   <div id="loginOverlay" role="dialog" aria-modal="true" aria-label="Login">
     <div class="login-card" role="presentation">
-      <!-- split overlays for center-out animation -->
       <div class="split-top" aria-hidden="true"></div>
       <div class="split-bottom" aria-hidden="true"></div>
 
@@ -740,11 +476,9 @@
 
       <div id="accountButtons" style="display:flex; flex-direction:column; gap:8px; align-items:center; width:100%;"></div>
 
-      <!-- Password prompt (REVERTED to simpler version) -->
       <div id="passwordArea" aria-hidden="true">
         <div id="pwPromptText" style="margin-bottom:4px; color:rgba(255,255,255,0.9); font-size:0.95em;"></div>
 
-        <!-- Inline error appears here for incorrect passwords -->
         <div id="pwErr" class="pw-error" aria-live="polite"></div>
 
         <div id="enterPw" style="display:none; gap:8px; flex-direction:column;">
@@ -765,7 +499,6 @@
         </div>
       </div>
 
-      <!-- login hint -->
       <div id="loginHint" style="font-size:0.85em; color:rgba(255,255,255,0.75);">
         Click/Press your account to sign in
       </div>
@@ -785,8 +518,6 @@
   <div class="page-inner">
     <!-- How To Use button -->
     <button id="howBtn">How To Use</button>
-    <!-- Create Server main button -->
-    <button id="createServerMainBtn">Create Server</button>
 
     <!-- Admin panel (centered) -->
     <div id="adminPanel" aria-hidden="true">
@@ -801,18 +532,14 @@
     <!-- Servers panel (identical layout & style to accounts panel) -->
     <div id="serversPanel" aria-hidden="true" style="display:none;">
       <h4>Servers (cloud)</h4>
-      <!-- no change-password here — only list with delete (where appropriate) -->
+      <!-- ADMIN: add server input (only visible to admin in JS) -->
+      <div id="newServerRow" style="display:none; gap:8px; margin-bottom:8px;">
+        <input id="newServerInput" placeholder="New server name" style="flex:1; padding:6px;" />
+        <button id="addServerBtn" style="padding:6px 8px;">Add</button>
+      </div>
+
+      <!-- servers list -->
       <ul id="serversList" aria-live="polite"></ul>
-    </div>
-
-    <h2 style="margin-top:6px;">Message Board</h2>
-
-    <!-- FROM row: exact text "From: " to the left of the select -->
-    <div class="from-row" aria-hidden="false">
-      <label for="nameSelect">From:</label>
-      <select id="nameSelect" required>
-        <option value="" disabled selected>Select a name</option>
-      </select>
     </div>
 
     <!-- Chatting With dropdown (all accounts + Main Server default + servers) -->
@@ -820,39 +547,16 @@
       <label for="chatWithSelect">Chatting With:</label>
       <select id="chatWithSelect" required>
         <option value="Main Server" selected>Main Server</option>
-        <!-- accounts & servers appended dynamically -->
       </select>
     </div>
 
     <br>
 
-    <!-- emoji-row: textarea + emoji button on same row -->
-    <div class="emoji-row" id="emojiRow" style="position:relative;">
-      <textarea id="messageInput" placeholder="Type a message..."></textarea>
-      <button id="emojiBtn" type="button" title="Insert emoji">😊</button>
-
-      <!-- emoji picker -->
-      <div id="emojiPicker" class="emoji-picker" aria-hidden="true">
-        <div class="emoji-grid" id="emojiGrid"></div>
-      </div>
-    </div>
-
-    <!-- Reply indicator (appears when replying to a specific message) -->
-    <div id="replyIndicator" class="reply-indicator" aria-hidden="true">
-      <div id="replyIndicatorText"></div>
-      <button id="cancelReplyBtn" class="cancel-reply">Cancel</button>
-    </div>
+    <!-- Message history -->
+    <div id="messages" aria-live="polite"></div>
 
     <br>
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button id="sendBtn">Send</button>
-      <button id="deleteCurrentBtn" title="Clear current message">Delete Current Message</button>
-    </div>
-
-    <h2>Message History</h2>
     <button id="clearBtn" title="Only Administrator may clear history">Clear Message History</button>
-
-    <div id="messages" aria-live="polite"></div>
   </div>
 
   <!-- Sign Out button (top-right) -->
@@ -878,7 +582,7 @@
     </div>
   </div>
 
-  <!-- Server create modal -->
+  <!-- Server create/edit modal (kept available but not required for admin add) -->
   <div id="serverBackdrop" class="server-backdrop" role="dialog" aria-modal="true">
     <div class="server-modal" role="document">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -907,9 +611,34 @@
       <ol>
         <li><u>Administrator</u> creates accounts (Admin panel) and manages them in the cloud.</li>
         <li>Users sign in from the lock screen. If a password doesn't exist, they are prompted to create one.</li>
-        <li>Non-admins may only send messages as their signed-in account. Admin may send as any name, but the dropdown will default to Administrator on admin login.</li>
+        <li>Messages are sent as the currently logged-in account; there is no "From" selection anymore.</li>
       </ol>
       <p>Thanks for using Message Board!</p>
+    </div>
+  </div>
+
+  <!-- Composer: fixed bottom -->
+  <div class="composer" role="region" aria-label="Message composer">
+    <div id="replyIndicator" class="reply-indicator" aria-hidden="true">
+      <div id="replyIndicatorText"></div>
+      <button id="cancelReplyBtn" class="cancel-reply">Cancel</button>
+    </div>
+
+    <div class="composer-row">
+      <div class="emoji-row" id="emojiRow" style="position:relative; flex:1;">
+        <textarea id="messageInput" placeholder="Type a message..."></textarea>
+        <button id="emojiBtn" type="button" title="Insert emoji">😊</button>
+        <div id="emojiPicker" class="emoji-picker" aria-hidden="true">
+          <div class="emoji-grid" id="emojiGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer-row controls">
+      <div style="margin-left:auto; display:flex; gap:8px;">
+        <button id="sendBtn">Send</button>
+        <button id="deleteCurrentBtn" title="Clear current message">Delete Current Message</button>
+      </div>
     </div>
   </div>
 
@@ -927,7 +656,8 @@
       doc,
       deleteDoc,
       getDocs,
-      getDoc
+      getDoc,
+      updateDoc
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -943,8 +673,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // DOM refs
-    const nameSelect = document.getElementById('nameSelect');
+    // DOM refs (removed 'From' select as requested)
     const chatWithSelect = document.getElementById('chatWithSelect');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -976,31 +705,25 @@
     const loginHint = document.getElementById('loginHint');
     const pwErr = document.getElementById('pwErr');
 
-    // split overlays
     const splitTop = document.querySelector('.split-top');
     const splitBottom = document.querySelector('.split-bottom');
 
-    // boot elements
     const bootOverlay = document.getElementById('bootOverlay');
     const bootBox = document.getElementById('bootBox');
     const bootLogo = document.getElementById('bootLogo');
 
-    // emoji UI refs
     const emojiBtn = document.getElementById('emojiBtn');
     const emojiPicker = document.getElementById('emojiPicker');
     const emojiGrid = document.getElementById('emojiGrid');
     const emojiRow = document.getElementById('emojiRow');
 
-    // How modal refs
     const howBtn = document.getElementById('howBtn');
     const howBackdrop = document.getElementById('howBackdrop');
     const howClose = document.getElementById('howClose');
 
-    // Sign out & change password refs
     const signOutBtn = document.getElementById('signOutBtn');
     const changePwBtn = document.getElementById('changePwBtn');
 
-    // Change password modal refs
     const pwBackdrop = document.getElementById('pwBackdrop');
     const cpCurrent = document.getElementById('cpCurrent');
     const cpNew = document.getElementById('cpNew');
@@ -1010,22 +733,22 @@
     const closePwModal = document.getElementById('closePwModal');
     const pwMsg = document.getElementById('pwMsg');
 
-    // reply UI refs
     const replyIndicator = document.getElementById('replyIndicator');
     const replyIndicatorText = document.getElementById('replyIndicatorText');
     const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
-    // Server UI refs
-    const createServerMainBtn = document.getElementById('createServerMainBtn');
     const serverBackdrop = document.getElementById('serverBackdrop');
     const closeServerModal = document.getElementById('closeServerModal');
     const serverNameInput = document.getElementById('serverNameInput');
     const membersList = document.getElementById('membersList');
     const createServerBtn = document.getElementById('createServerBtn');
 
-    // Servers panel refs
+    // Servers panel refs & admin add UI
     const serversPanel = document.getElementById('serversPanel');
     const serversList = document.getElementById('serversList');
+    const newServerRow = document.getElementById('newServerRow');
+    const newServerInput = document.getElementById('newServerInput');
+    const addServerBtn = document.getElementById('addServerBtn');
 
     // hide page until login
     pageInner.style.display = 'none';
@@ -1036,17 +759,13 @@
     const serversDocRef = doc(db, 'meta', 'servers');
     const ADMIN_NAME = 'Administrator';
 
-    // remember last messages so we can re-render after login
+    // caches & state
     let lastMessages = [];
-    // If admin is changing another user's password, this stores the target account.
     let pwChangeTarget = null;
-
-    // reply target state
     let replyTargetId = null;
     let replyTargetName = null;
-
-    // servers map (local cache)
-    let serversMap = {}; // { serverName: [member1, member2, ...] OR { members: [...], creator: 'name' }, ... }
+    let serversMap = {};
+    let accountsCache = []; // list of account names
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -1057,7 +776,6 @@
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ensure Administrator exists in cloud (if possible)
     (async function ensureAdminPresent() {
       try {
         const snap = await getDoc(accountsDocRef);
@@ -1076,7 +794,7 @@
       }
     })();
 
-    // realtime accounts listener -> populates login overlay and admin panel & nameSelect & chatWithSelect
+    // realtime accounts listener -> populates login overlay and admin panel & chatWithSelect
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
       populateAccounts(list);
@@ -1089,9 +807,7 @@
     onSnapshot(serversDocRef, snap => {
       const data = snap.exists() ? (snap.data().map || {}) : {};
       serversMap = Object.assign({}, data);
-      // refresh chat-with options to include servers appropriately
       refreshChatWithOptions();
-      // update servers panel contents for current user (if signed in)
       populateServersFor(currentUser);
     }, err => {
       console.warn('Servers listener error:', err);
@@ -1114,56 +830,49 @@
         unique.forEach(name => appendAccountButton(name));
       }
 
+      accountsCache = Array.isArray(list) ? list.slice() : [];
+      if (!accountsCache.includes(ADMIN_NAME)) accountsCache.unshift(ADMIN_NAME);
+
       // admin panel list
       accountsList.innerHTML = "";
       if (Array.isArray(list)) {
-        // ensure Administrator first
         const ordered = list.includes(ADMIN_NAME) ? [ADMIN_NAME, ...list.filter(n => n !== ADMIN_NAME)] : list;
         ordered.forEach(name => {
           const li = document.createElement('li');
-
-          // left: label
           const label = document.createElement('span');
           label.textContent = name;
 
-          // right: actions (change password + remove)
           const actionsRight = document.createElement('div');
           actionsRight.style.display = 'flex';
           actionsRight.style.gap = '8px';
           actionsRight.style.alignItems = 'center';
 
           if (name === ADMIN_NAME) {
-            // Remove disabled (Administrator cannot be removed)
             const rm = document.createElement('button');
             rm.className = 'remove-account disabled';
             rm.textContent = 'Remove';
             rm.disabled = true;
             actionsRight.appendChild(rm);
           } else {
-            // Change Password (admin-only action on accounts list)
             const changeBtn = document.createElement('button');
             changeBtn.className = 'change-account-pw';
             changeBtn.textContent = 'Change Password';
             changeBtn.addEventListener('click', (ev) => {
               ev.stopPropagation();
-              // Only admins may change other users' passwords
               if (currentUser !== ADMIN_NAME) {
                 alert('Only Administrator may change other account passwords.');
                 return;
               }
-              // Target is the listed account; admin flow: do not require current password
               pwChangeTarget = name;
               cpCurrent.value = '';
               cpNew.value = '';
               cpNewRetype.value = '';
-              // Hide current-password input because admin is changing someone else
               cpCurrent.style.display = 'none';
               pwMsg.textContent = `Set a new password for ${name}.`;
               pwBackdrop.style.display = 'flex';
             });
             actionsRight.appendChild(changeBtn);
 
-            // Remove button
             const rm = document.createElement('button');
             rm.className = 'remove-account';
             rm.textContent = 'Remove';
@@ -1175,7 +884,6 @@
                 const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
                 if (!filtered.includes(ADMIN_NAME)) filtered.unshift(ADMIN_NAME);
                 await setDoc(accountsDocRef, { list: filtered }, { merge: true });
-                // remove password map entry if present
                 try {
                   const pwSnap = await getDoc(passwordsDocRef);
                   if (pwSnap.exists()) {
@@ -1193,52 +901,26 @@
             actionsRight.appendChild(rm);
           }
 
-          // assemble li: label left, actions right
           li.appendChild(label);
           li.appendChild(actionsRight);
           accountsList.appendChild(li);
         });
       }
 
-      // populate nameSelect (From:)
-      nameSelect.innerHTML = "";
-      const placeholder = document.createElement('option');
-      placeholder.value = "";
-      placeholder.disabled = true;
-      placeholder.selected = true;
-      placeholder.textContent = "Select a name";
-      nameSelect.appendChild(placeholder);
-
-      const finalList = Array.isArray(list) ? list.slice() : [];
-      if (!finalList.includes(ADMIN_NAME)) finalList.unshift(ADMIN_NAME);
-      const seen2 = new Set();
-      for (const n of finalList) {
-        if (!n || seen2.has(n)) continue;
-        seen2.add(n);
-        const opt = document.createElement('option');
-        opt.value = n;
-        opt.textContent = n;
-        nameSelect.appendChild(opt);
-      }
-
-      // refresh chatWith options (includes Main Server, servers, accounts but excludes currentUser)
       refreshChatWithOptions();
-
       updateClearButtonState();
 
-      // If the login overlay is visible, play the split-open reveal animation for account list
       if (loginOverlay.style.display !== 'none' && accountButtons.style.visibility !== 'hidden') {
         splitTop.style.display = '';
         splitBottom.style.display = '';
         void loginCard.offsetWidth;
         loginCard.classList.add('split-open');
-        // also ensure the login-card scales in from center (3s transition)
         loginCard.classList.add('scale-in');
         setTimeout(() => {
           splitTop.style.display = 'none';
           splitBottom.style.display = 'none';
           loginCard.classList.remove('split-open');
-        }, 3000); // 3s to match user request
+        }, 3000);
       }
     }
 
@@ -1289,13 +971,11 @@
     let currentUser = null;
     const passwordFlow = { active: false, account: null, mode: null };
 
-    // ---------- REVERTED startPasswordFlowFor (simple swap, no transition) ----------
     async function startPasswordFlowFor(accountName) {
       passwordFlow.active = true;
       passwordFlow.account = accountName;
       passwordFlow.mode = null;
 
-      // immediate swap: hide accounts list and show password area (no fade/condense)
       accountButtons.style.display = 'none';
       passwordArea.style.display = 'flex';
       passwordArea.setAttribute('aria-hidden', 'false');
@@ -1304,7 +984,6 @@
       avatarCircle.textContent = (accountName && typeof accountName === 'string') ? accountName.trim().charAt(0).toUpperCase() : '';
       pwPromptText.textContent = `Sign in as ${accountName}`;
 
-      // clear previous inline error
       pwErr.style.display = 'none';
       pwErr.textContent = '';
       passwordInput.classList.remove('input-error');
@@ -1333,7 +1012,6 @@
       }
     }
 
-    // ---------- REVERTED endPasswordFlow ----------
     function endPasswordFlow() {
       passwordFlow.active = false;
       passwordFlow.account = null;
@@ -1346,7 +1024,6 @@
       loginHint.textContent = 'Click/Press your account to sign in';
       pwPromptText.textContent = '';
 
-      // clear inline error
       pwErr.style.display = 'none';
       pwErr.textContent = '';
       passwordInput.classList.remove('input-error');
@@ -1367,14 +1044,12 @@
         const existingMap = (snap.exists() && snap.data().map) ? snap.data().map : {};
         existingMap[acct] = hashed;
         await setDoc(passwordsDocRef, { map: existingMap }, { merge: true });
-        // keep boot sequence behavior (startBootSequence) as previously present in the advanced version
         startBootSequence(acct);
       } catch (err) {
         alert('Failed to set password: ' + (err.message || err));
       }
     });
 
-    // submit handler (keeps inline error behavior)
     submitPwBtn.addEventListener('click', async () => {
       const p = (passwordInput.value || '').trim();
       if (!p) {
@@ -1391,7 +1066,6 @@
         const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
         const stored = map[acct] || null;
         if (!stored) {
-          // no stored password -> instruct to create instead (simple behavior)
           passwordFlow.mode = 'create';
           enterPw.style.display = 'none';
           createPw.style.display = 'flex';
@@ -1414,7 +1088,6 @@
       }
     });
 
-    // clear inline error if user types again
     passwordInput.addEventListener('input', () => {
       if (pwErr.style.display === 'block') {
         pwErr.style.display = 'none';
@@ -1423,7 +1096,6 @@
       }
     });
 
-    // submit on Enter
     passwordInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1431,7 +1103,6 @@
       }
     });
 
-    // START BOOT SEQUENCE (kept from previous advanced version)
     async function startBootSequence(accountName) {
       loginCard.classList.add('fade-out');
 
@@ -1440,7 +1111,6 @@
         bootOverlay.style.display = 'flex';
         requestAnimationFrame(() => bootBox.classList.add('show'));
 
-        // hidden setup
         (async function hiddenSetup() {
           try {
             await getDocs(query(collection(db, 'messages'), orderBy('time', 'asc')));
@@ -1466,57 +1136,27 @@
       currentUser = accountName;
       pageInner.style.display = '';
       if (currentUser === ADMIN_NAME) {
-        showAdminPanel();           // show with animation
+        showAdminPanel();
         adminPanel.setAttribute('aria-hidden', 'false');
       } else {
-        hideAdminPanel();           // ensure hid when not admin
+        hideAdminPanel();
         adminPanel.setAttribute('aria-hidden', 'true');
       }
 
-      // Servers panel should be visible for EVERY signed-in account.
-      serversPanel.style.display = ''; // allow CSS transitions to make it visible via class
+      // Servers panel visible for every signed-in account
+      serversPanel.style.display = '';
       serversPanel.classList.add('panel-open');
       serversPanel.setAttribute('aria-hidden', 'false');
 
+      // Show admin's in-panel server add controls only for admin
       if (currentUser === ADMIN_NAME) {
-        let found = false;
-        for (let i = 0; i < nameSelect.options.length; i++) {
-          if (nameSelect.options[i].value === ADMIN_NAME) {
-            nameSelect.selectedIndex = i;
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          const opt = document.createElement('option');
-          opt.value = ADMIN_NAME;
-          opt.textContent = ADMIN_NAME;
-          nameSelect.appendChild(opt);
-          nameSelect.value = ADMIN_NAME;
-        }
-        nameSelect.disabled = false;
+        newServerRow.style.display = 'flex';
       } else {
-        let found = false;
-        for (let i = 0; i < nameSelect.options.length; i++) {
-          if (nameSelect.options[i].value === accountName) {
-            nameSelect.selectedIndex = i;
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          const opt = document.createElement('option');
-          opt.value = accountName;
-          opt.textContent = accountName;
-          nameSelect.appendChild(opt);
-          nameSelect.value = accountName;
-        }
-        nameSelect.disabled = true;
+        newServerRow.style.display = 'none';
       }
 
       messageInput.focus();
 
-      // restore password UI to hidden and account list visible
       passwordArea.style.display = 'none';
       accountButtons.style.display = 'flex';
       passwordFlow.active = false;
@@ -1526,28 +1166,21 @@
       loginHint.textContent = 'Click/Press your account to sign in';
       pwPromptText.textContent = '';
 
-      // show sign out + change password buttons
       signOutBtn.style.display = 'inline-block';
       changePwBtn.style.display = 'inline-block';
 
       updateClearButtonState();
 
-      // refresh chat-with options to remove currentUser as a choice (can't DM yourself)
       refreshChatWithOptions();
 
-      // populate servers panel for this account
       populateServersFor(currentUser);
 
-      // re-render messages so action buttons update to match currentUser
       renderMessages(lastMessages);
     }
 
-    // Helper: show/hide admin panel with CSS class so it unfolds/folds
     function showAdminPanel() {
-      // if already visible, do nothing
       if (adminPanel.classList.contains('panel-open')) return;
-      adminPanel.style.display = 'block';     // ensure it's in flow so transitions apply
-      // small timeout to allow layout then add class
+      adminPanel.style.display = 'block';
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           adminPanel.classList.add('panel-open');
@@ -1559,19 +1192,15 @@
         adminPanel.style.display = 'none';
         return;
       }
-      // remove class to collapse
       adminPanel.classList.remove('panel-open');
-      // after transition, set display none to completely hide
-      const t = 520; // matches CSS max-height transition duration
+      const t = 520;
       setTimeout(() => {
-        // only hide if class still not present (i.e., no re-open meanwhile)
         if (!adminPanel.classList.contains('panel-open')) {
           adminPanel.style.display = 'none';
         }
       }, t + 60);
     }
 
-    // SIGN OUT behavior (uses same startup animation sequence)
     function signOut() {
       currentUser = null;
 
@@ -1579,9 +1208,7 @@
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
 
-      // fold admin panel when signing out
       hideAdminPanel();
-      // hide servers panel when signed out
       serversPanel.classList.remove('panel-open');
       serversPanel.style.display = 'none';
       serversPanel.setAttribute('aria-hidden', 'true');
@@ -1590,12 +1217,11 @@
         pageInner.style.display = 'none';
         pageInner.classList.remove('fade-out');
 
-        // --- START: Changed to use the same startup animation sequence ---
         loginOverlay.style.display = 'flex';
         loginCard.style.visibility = '';
         loginCard.classList.remove('fade-out');
         loginCard.classList.remove('split-open');
-        loginCard.classList.remove('scale-in'); // reset to collapsed; requestAnimationFrame will add scale-in
+        loginCard.classList.remove('scale-in');
 
         splitTop.style.display = '';
         splitBottom.style.display = '';
@@ -1614,7 +1240,7 @@
           splitBottom.style.display = 'none';
           loginCard.classList.remove('split-open');
         }, 3000);
-        // --- END ---
+
         passwordArea.style.display = 'none';
 
         avatarCircle.textContent = '';
@@ -1625,13 +1251,11 @@
       }, 420);
     }
 
-    // wire up signOut button
     signOutBtn.addEventListener('click', () => {
       if (!confirm('Sign out?')) return;
       signOut();
     });
 
-    // wire up change password button (opens modal for current user)
     changePwBtn.addEventListener('click', () => {
       if (!currentUser) {
         alert('No user signed in.');
@@ -1648,7 +1272,6 @@
     cpCancelBtn.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
     closePwModal.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
 
-    // Save password change (handles both admin changing others and users changing their own)
     cpSaveBtn.addEventListener('click', async () => {
       if (!currentUser) { alert('No user signed in.'); return; }
       const target = pwChangeTarget || currentUser;
@@ -1686,7 +1309,6 @@
       }
     });
 
-    // messages listener & renderer
     const messagesCol = collection(db, 'messages');
     const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
 
@@ -1709,7 +1331,6 @@
       console.error("Realtime messages error:", err);
     });
 
-    // Helper that normalizes server entry formats (legacy array or new object)
     function getServerData(serverName) {
       const entry = serversMap && serversMap[serverName];
       if (!entry) return { members: [], creator: null };
@@ -1726,28 +1347,20 @@
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      // Determine current chat context from chatWithSelect
       const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
 
-      // Filter messages depending on Chatting With:
-      // - If chatWith == "Main Server": show only public messages (dmTarget == null)
-      // - Else if chatWith matches a server name: show messages with dmTarget == serverName only if currentUser is member
-      // - Else (chatWith is an account): show messages that are DMs between currentUser and chatWith
       let visibleMessages = [];
       if (chatWith === "Main Server") {
         visibleMessages = messages.filter(m => !m.dmTarget);
       } else if (serversMap && Object.prototype.hasOwnProperty.call(serversMap, chatWith)) {
-        // chatWith is a server
         const sd = getServerData(chatWith);
         const members = sd.members;
         if (!currentUser || !members.includes(currentUser)) {
-          // not a member: show nothing
           visibleMessages = [];
         } else {
           visibleMessages = messages.filter(m => m.dmTarget === chatWith);
         }
       } else {
-        // chatWith is a single-account DM
         if (!currentUser) {
           visibleMessages = [];
         } else {
@@ -1762,7 +1375,6 @@
 
       if (visibleMessages.length === 0) return;
 
-      // Build replies map for visible messages only: parentId => [replyMsgs]
       const repliesByParent = {};
       const topLevel = [];
       for (const m of visibleMessages) {
@@ -1774,11 +1386,9 @@
         }
       }
 
-      // Add timestamp for top of list
       const topTime = formatTimestamp(topLevel[0]?.time);
       messagesDiv.appendChild(createTimestampRow(topTime));
 
-      // Render top-level messages in chronological order (topLevel already sorted by time)
       for (let i = 0; i < topLevel.length; i++) {
         const m = topLevel[i] || {};
         const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
@@ -1803,7 +1413,6 @@
         div.appendChild(nameSpan);
         div.appendChild(contentSpan);
 
-        // Reply button (now appears only on hover, via CSS) -- only allowed for top-level visible messages
         const replyBtn = document.createElement('button');
         replyBtn.type = 'button';
         replyBtn.className = 'icon-btn reply-btn';
@@ -1812,7 +1421,6 @@
 
         replyBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
-          // Set reply target
           replyTargetId = m.id;
           replyTargetName = who;
           replyIndicatorText.textContent = `Replying to ${who}`;
@@ -1821,7 +1429,6 @@
           messageInput.focus();
         });
 
-        // actions (edit/delete) still appear for messages you can act on
         const actions = document.createElement('div');
         actions.className = 'actions';
 
@@ -1837,9 +1444,7 @@
             const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
             if (!allowedNow) { alert('Not allowed to delete this message.'); return; }
             try {
-              // delete the message and any replies referencing it
               await deleteDoc(doc(db, 'messages', m.id));
-              // find replies and delete them (optional: could keep replies; here we delete)
               const snap = await getDocs(messagesQuery);
               const deletes = [];
               snap.forEach(snapDoc => {
@@ -1866,16 +1471,13 @@
           actions.appendChild(edit);
         }
 
-        // assemble: message div, reply button, then actions
         row.appendChild(div);
         row.appendChild(replyBtn);
         row.appendChild(actions);
         messagesDiv.appendChild(row);
 
-        // If this message has replies, render replies block
         const replies = repliesByParent[m.id] || [];
         if (replies && replies.length > 0) {
-          // sort replies by time (they should already be ordered but ensure)
           replies.sort((a,b) => {
             const ta = a.time && a.time.toDate ? a.time.toDate().getTime() : (new Date(a.time || 0)).getTime();
             const tb = b.time && b.time.toDate ? b.time.toDate().getTime() : (new Date(b.time || 0)).getTime();
@@ -1893,9 +1495,11 @@
           messagesDiv.appendChild(wrap);
         }
       }
+
+      // Optional: automatically keep scroll near bottom while viewing most recent messages.
+      // (We do not force-scroll when the user is reading older messages.)
     }
 
-    // small helpers used above (formatTimestamp, createTimestampRow, startEdit, etc.)
     function formatTimestamp(ts) {
       if (!ts) return '';
       try {
@@ -1917,7 +1521,6 @@
       return r;
     }
 
-    // start inline edit
     function startEdit(row, div, contentSpan, messageObj) {
       const parent = div.parentElement;
       const ed = document.createElement('div');
@@ -1947,7 +1550,6 @@
       parent.replaceChild(ed, div);
     }
 
-    // color palette and deterministic hash
     const colors = [
       'rgba(0, 180, 0, 0.85)',
       'rgba(255, 165, 0, 0.95)',
@@ -1968,7 +1570,6 @@
       return colors[idx];
     }
 
-    // retention
     async function enforceRetention() {
       try {
         const snap = await getDocs(messagesQuery);
@@ -1984,7 +1585,6 @@
       }
     }
 
-    // send message
     sendBtn.addEventListener('click', addMessage);
     messageInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -1993,10 +1593,8 @@
       }
     });
 
-    // Delete Current Message clears the message input (red button)
     deleteCurrentBtn.addEventListener('click', () => {
       messageInput.value = '';
-      // also cancel reply state if any
       replyTargetId = null;
       replyTargetName = null;
       replyIndicator.style.display = 'none';
@@ -2005,37 +1603,35 @@
     });
 
     async function addMessage() {
-      let sendName;
-      if (currentUser && currentUser !== ADMIN_NAME) sendName = currentUser;
-      else sendName = (nameSelect.value || "").trim();
+      if (!currentUser) { alert('No user signed in.'); return; }
+      const sendName = currentUser;
       const text = (messageInput.value || "").trim();
       if (!sendName || !text) return;
       try {
-        // include parentId when replying
         const payload = { name: sendName, text, time: serverTimestamp() };
         if (replyTargetId) payload.parentId = replyTargetId;
 
-        // Use Chatting With dropdown to decide if this is a DM, group, or main server message
         const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
         if (chatWith && chatWith !== "Main Server") {
-          payload.dmTarget = chatWith; // works for single-account DMs and servers (group)
+          payload.dmTarget = chatWith;
         }
 
         await addDoc(collection(db, 'messages'), payload);
         messageInput.value = "";
-        // clear reply state after send
         replyTargetId = null;
         replyTargetName = null;
         replyIndicator.style.display = 'none';
         replyIndicator.setAttribute('aria-hidden', 'true');
         replyIndicatorText.textContent = '';
         await enforceRetention();
+
+        // keep view scrolled near bottom after sending
+        try { messagesDiv.scrollTop = messagesDiv.scrollHeight; } catch(e){}
       } catch (err) {
         alert("Failed to send message: " + err.message);
       }
     }
 
-    // cancel reply button handler
     cancelReplyBtn.addEventListener('click', () => {
       replyTargetId = null;
       replyTargetName = null;
@@ -2044,19 +1640,17 @@
       replyIndicatorText.textContent = '';
     });
 
-    // when the chatWithSelect changes, re-render visible messages
     chatWithSelect.addEventListener('change', () => {
       renderMessages(lastMessages);
     });
 
-    // clear button state & handler (admin only).
     function updateClearButtonState() {
       if (currentUser === ADMIN_NAME) {
-        clearBtn.style.display = '';      // visible
+        clearBtn.style.display = '';
         clearBtn.disabled = false;
         clearBtn.title = 'Clear all messages (Administrator only)';
       } else {
-        clearBtn.style.display = 'none';  // hide for everyone else
+        clearBtn.style.display = 'none';
         clearBtn.disabled = true;
         clearBtn.title = '';
       }
@@ -2078,7 +1672,6 @@
       }
     });
 
-    // Emoji picker setup
     const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😜","😝","🫠","😎","🤓"];
     emojis.forEach(e => {
       const btn = document.createElement('button');
@@ -2101,41 +1694,29 @@
       }
     });
 
-    // How modal wiring
     howBtn.addEventListener('click', () => { howBackdrop.style.display = 'flex'; });
     howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
     howBackdrop.addEventListener('click', (ev) => { if (ev.target === howBackdrop) howBackdrop.style.display = 'none'; });
 
-    // Server modal wiring
-    createServerMainBtn.addEventListener('click', async () => {
-      // populate member list checkboxes (from accounts) each time
-      membersList.innerHTML = '';
+    // Server admin-add wiring (added per your request: add servers from admin servers panel)
+    addServerBtn.addEventListener('click', async () => {
+      if (currentUser !== ADMIN_NAME) return alert('Only Administrator may add servers from the Servers panel.');
+      const name = (newServerInput.value || '').trim();
+      if (!name) return alert('Enter a server name.');
       try {
-        const snap = await getDoc(accountsDocRef);
-        const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-        const final = Array.isArray(list) ? list.slice() : [];
-        if (!final.includes(ADMIN_NAME)) final.unshift(ADMIN_NAME);
-        for (const name of final) {
-          if (!name) continue;
-          const row = document.createElement('div');
-          row.className = 'member-row';
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.dataset.name = name;
-          const lab = document.createElement('label');
-          lab.textContent = name;
-          row.appendChild(cb);
-          row.appendChild(lab);
-          membersList.appendChild(row);
-          cb.addEventListener('change', checkServerFormValidity);
+        const snap = await getDoc(serversDocRef);
+        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        if (existing[name]) {
+          alert('A server with that name already exists.');
+          return;
         }
+        // by default creator is admin, members include only admin initially
+        existing[name] = { members: [currentUser], creator: currentUser };
+        await setDoc(serversDocRef, { map: existing }, { merge: true });
+        newServerInput.value = '';
       } catch (err) {
-        membersList.textContent = 'Failed to load accounts';
+        alert('Failed to add server: ' + (err.message || err));
       }
-      serverNameInput.value = '';
-      serverBackdrop.style.display = 'flex';
-      serverBackdrop.focus();
-      checkServerFormValidity();
     });
 
     closeServerModal.addEventListener('click', () => {
@@ -2168,25 +1749,18 @@
       if (members.length === 0) return alert('Select at least one member.');
 
       try {
-        // write to meta/servers: allow both legacy array OR object with members & creator.
-        // We will store as object { members: [...], creator: currentUser || members[0] }
         const snap = await getDoc(serversDocRef);
         const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
         existing[name] = { members, creator: (currentUser || (members[0] || null)) };
         await setDoc(serversDocRef, { map: existing }, { merge: true });
         serverBackdrop.style.display = 'none';
-        // refresh options will run automatically because of servers onSnapshot listener
         alert(`Server "${name}" created.`);
       } catch (err) {
         alert('Failed to create server: ' + (err.message || err));
       }
     });
 
-    // --------------------- Helper to refresh Chatting With dropdown ---------------------
     function refreshChatWithOptions() {
-      // Keep "Main Server" first
-      const existingAccountsSnap = Array.from(nameSelect.querySelectorAll('option')).map(o => o.value).filter(v => v && v !== "");
-      // We'll rebuild chatWithSelect to include Main Server, then server names (only those relevant), then accounts (excluding currentUser)
       chatWithSelect.innerHTML = "";
       const mainOpt = document.createElement('option');
       mainOpt.value = "Main Server";
@@ -2194,12 +1768,11 @@
       mainOpt.selected = true;
       chatWithSelect.appendChild(mainOpt);
 
-      // Add servers for which currentUser is member (or always show them but selection will hide messages if not a member)
       const serverNames = Object.keys(serversMap || {});
       for (const s of serverNames) {
         const sd = getServerData(s);
         const members = sd.members;
-        if (!currentUser || members.includes(currentUser)) {
+        if (!currentUser || members.includes(currentUser) || currentUser === ADMIN_NAME) {
           const opt = document.createElement('option');
           opt.value = s;
           opt.textContent = s;
@@ -2207,20 +1780,12 @@
         }
       }
 
-      // Add accounts (exclude currentUser so you cannot DM yourself)
-      const accountValues = [];
-      for (let i = 0; i < nameSelect.options.length; i++) {
-        const v = nameSelect.options[i].value;
-        if (!v) continue;
-        accountValues.push(v);
-      }
+      const accountValues = Array.isArray(accountsCache) ? accountsCache.slice() : [];
       const seen = new Set();
       for (const n of accountValues) {
         if (!n || seen.has(n)) continue;
         seen.add(n);
-        // skip currentUser so you cannot DM yourself
         if (currentUser && n === currentUser) continue;
-        // don't add Main Server or duplicates
         if (n === "Main Server") continue;
         const opt = document.createElement('option');
         opt.value = n;
@@ -2229,8 +1794,7 @@
       }
     }
 
-    // --------------------- Servers panel population ---------------------
-    // Populate the servers panel for a given accountName (shows servers that account is a member of OR created)
+    // Populate servers panel for a given accountName
     async function populateServersFor(accountName) {
       serversList.innerHTML = '';
       if (!accountName) {
@@ -2239,67 +1803,123 @@
         serversPanel.setAttribute('aria-hidden', 'true');
         return;
       }
-      // Ensure visible
       serversPanel.style.display = '';
       serversPanel.classList.add('panel-open');
       serversPanel.setAttribute('aria-hidden', 'false');
 
+      // Admin sees all servers; non-admin sees only membership or created servers
       const names = Object.keys(serversMap || {});
       if (!names.length) return;
 
-      // For each server, show if member or creator
       for (const s of names) {
         const sd = getServerData(s);
         const members = sd.members || [];
         const creator = sd.creator || null;
-        if (members.includes(accountName) || creator === accountName) {
-          const li = document.createElement('li');
-          const label = document.createElement('span');
-          label.textContent = s;
-          li.appendChild(label);
 
-          const right = document.createElement('div');
-          right.style.display = 'flex';
-          right.style.gap = '8px';
-          right.style.alignItems = 'center';
-
-          // Delete button: only show enabled when this account is the creator of the server
-          const del = document.createElement('button');
-          del.className = 'remove-account';
-          del.textContent = 'Delete';
-          if (creator === accountName) {
-            del.addEventListener('click', async () => {
-              if (!confirm(`Delete server "${s}" from cloud? This will remove the server for everyone.`)) return;
-              try {
-                const snap = await getDoc(serversDocRef);
-                const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-                if (existing[s]) delete existing[s];
-                await setDoc(serversDocRef, { map: existing }, { merge: true });
-              } catch (err) {
-                alert('Failed to delete server: ' + (err.message || err));
-              }
-            });
-          } else {
-            // Disabled appearance when not creator
-            del.disabled = true;
-            del.classList.add('disabled');
-          }
-          right.appendChild(del);
-
-          li.appendChild(right);
-          serversList.appendChild(li);
+        // determine visibility for non-admin
+        if (currentUser !== ADMIN_NAME && !(members.includes(accountName) || creator === accountName)) {
+          continue;
         }
+
+        const li = document.createElement('li');
+        const label = document.createElement('span');
+        label.textContent = s;
+        li.appendChild(label);
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.gap = '8px';
+        right.style.alignItems = 'center';
+
+        // Edit button: visible if account is creator or admin
+        const editBtn = document.createElement('button');
+        editBtn.className = 'icon-btn pencil';
+        editBtn.textContent = 'Edit';
+        const canEdit = (currentUser === ADMIN_NAME) || (creator === accountName);
+        if (canEdit) {
+          editBtn.addEventListener('click', async () => {
+            // Prompt for rename (simple edit). Admin may edit any server.
+            const newName = prompt('Enter new server name (leave blank to cancel):', s);
+            if (!newName || newName.trim() === '' || newName === s) return;
+            const newNameTrim = newName.trim();
+            try {
+              const snap = await getDoc(serversDocRef);
+              const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+              if (existing[newNameTrim]) {
+                alert('A server with that name already exists.');
+                return;
+              }
+              // move data to new key
+              existing[newNameTrim] = existing[s];
+              delete existing[s];
+              await setDoc(serversDocRef, { map: existing }, { merge: true });
+
+              // update any messages referencing the old server name as dmTarget to the new name
+              try {
+                const msgsSnap = await getDocs(collection(db, 'messages'));
+                const updates = [];
+                msgsSnap.forEach(md => {
+                  const data = md.data();
+                  if (data && data.dmTarget === s) {
+                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: newNameTrim }));
+                  }
+                });
+                if (updates.length) await Promise.all(updates);
+              } catch (err2) {
+                console.warn('Failed to update messages dmTarget after server rename:', err2?.message || err2);
+              }
+            } catch (err) {
+              alert('Failed to rename server: ' + (err.message || err));
+            }
+          });
+        } else {
+          editBtn.disabled = true;
+          editBtn.classList.add('disabled');
+        }
+        right.appendChild(editBtn);
+
+        // Delete button: admin may delete any; creators may delete their own (keeps previous creator-delete behaviour)
+        const del = document.createElement('button');
+        del.className = 'remove-account';
+        del.textContent = 'Delete';
+        if (currentUser === ADMIN_NAME || creator === accountName) {
+          del.addEventListener('click', async () => {
+            if (!confirm(`Delete server "${s}" from cloud? This will remove the server for everyone.`)) return;
+            try {
+              const snap = await getDoc(serversDocRef);
+              const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+              if (existing[s]) delete existing[s];
+              await setDoc(serversDocRef, { map: existing }, { merge: true });
+              // Also update messages that referenced this server to remove dmTarget (make them public)
+              try {
+                const msgsSnap = await getDocs(collection(db, 'messages'));
+                const updates = [];
+                msgsSnap.forEach(md => {
+                  const data = md.data();
+                  if (data && data.dmTarget === s) {
+                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: null }));
+                  }
+                });
+                if (updates.length) await Promise.all(updates);
+              } catch (err2) {
+                console.warn('Failed to update messages after server delete:', err2?.message || err2);
+              }
+            } catch (err) {
+              alert('Failed to delete server: ' + (err.message || err));
+            }
+          });
+        } else {
+          del.disabled = true;
+          del.classList.add('disabled');
+        }
+        right.appendChild(del);
+
+        li.appendChild(right);
+        serversList.appendChild(li);
       }
     }
 
-    // --------------------- Remaining existing logic (unchanged) ---------------------
-
-    // cancel reply button handler (already wired above)
-    // clear button state & handler already defined above
-
-    // Emoji & How modal wiring already defined above
-
-    // init: ensure chatWithSelect is refreshed on load
+    // init chatWithSelect
     refreshChatWithOptions();
 
   </script>
